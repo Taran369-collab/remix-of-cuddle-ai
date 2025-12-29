@@ -51,7 +51,7 @@ const Profile = () => {
         .single();
 
       if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
+        if (import.meta.env.DEV) console.error("Error fetching profile:", error);
         return;
       }
 
@@ -61,7 +61,7 @@ const Profile = () => {
         setAvatarUrl(user.user_metadata.avatar_url);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      if (import.meta.env.DEV) console.error("Error fetching profile:", error);
     }
   };
 
@@ -118,7 +118,7 @@ const Profile = () => {
       setAvatarUrl(avatarUrlWithTimestamp);
       toast.success("Avatar updated successfully!");
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      if (import.meta.env.DEV) console.error("Error uploading avatar:", error);
       toast.error("Failed to upload avatar");
     } finally {
       setIsUploadingAvatar(false);
@@ -142,7 +142,7 @@ const Profile = () => {
       if (error) throw error;
       toast.success("Profile updated successfully!");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      if (import.meta.env.DEV) console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
     } finally {
       setIsUpdating(false);
