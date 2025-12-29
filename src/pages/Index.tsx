@@ -217,10 +217,19 @@ const Index = () => {
 
           {/* Footer */}
           <footer className="text-center mt-16 pt-8 border-t border-rose-light/20">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 text-muted-foreground mb-4">
               <span className="font-body text-sm">Made with</span>
               <Heart className="text-rose animate-heartbeat fill-current" size={16} />
               <span className="font-body text-sm">for couples everywhere</span>
+            </div>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+                Privacy Policy
+              </Link>
+              <span className="text-muted-foreground/50">•</span>
+              <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+                Terms of Service
+              </Link>
             </div>
           </footer>
         </div>
