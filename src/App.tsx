@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PageTracker } from "@/components/PageTracker";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -13,6 +14,7 @@ import AdminTeddyImages from "./pages/AdminTeddyImages";
 import AdminLoveMessages from "./pages/AdminLoveMessages";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAnalytics from "./pages/AdminAnalytics";
+import AdminViewers from "./pages/AdminViewers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <HashRouter>
+            <PageTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -34,6 +37,7 @@ const App = () => (
               <Route path="/admin/messages" element={<AdminLoveMessages />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
+              <Route path="/admin/viewers" element={<AdminViewers />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

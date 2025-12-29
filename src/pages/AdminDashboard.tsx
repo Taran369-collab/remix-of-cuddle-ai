@@ -1,7 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Users, BarChart3 } from "lucide-react";
+import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye } from "lucide-react";
 
 const AdminDashboard = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -131,6 +131,22 @@ const AdminDashboard = () => {
               </p>
               <Button variant="romantic" size="sm" className="w-full">
                 View Analytics
+              </Button>
+            </div>
+          </Link>
+
+          {/* Viewer Analytics */}
+          <Link to="/admin/viewers" className="block">
+            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 backdrop-blur-sm rounded-2xl p-6 border border-green-500/30 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-4">
+                <Eye className="text-green-600" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Viewer Stats</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Track page views and generate income insights.
+              </p>
+              <Button variant="outline" size="sm" className="w-full border-green-500/30 text-green-600 hover:bg-green-500/10">
+                View Stats
               </Button>
             </div>
           </Link>
