@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Heart, Sparkles, Stars } from "lucide-react";
+import { useState } from "react";
+import { Heart, Sparkles, Stars, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const loveMessages = [
-  { min: 90, message: "Soulmates Forever! 💕", emoji: "🔥" },
+  { min: 90, message: "Soulmates Forever!", emoji: "🔥" },
   { min: 75, message: "True Love Connection!", emoji: "💖" },
   { min: 60, message: "Growing Strong Together", emoji: "🌹" },
   { min: 45, message: "Sweet Beginnings", emoji: "🌸" },
@@ -12,6 +13,8 @@ const loveMessages = [
 ];
 
 const LoveMeter = () => {
+  const [name1, setName1] = useState("");
+  const [name2, setName2] = useState("");
   const [isSpinning, setIsSpinning] = useState(false);
   const [loveScore, setLoveScore] = useState<number | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
@@ -21,7 +24,11 @@ const LoveMeter = () => {
     return loveMessages.find((m) => score >= m.min) || loveMessages[loveMessages.length - 1];
   };
 
+  const canSpin = name1.trim().length > 0 && name2.trim().length > 0;
+
   const spinMeter = () => {
+    if (!canSpin) return;
+    
     setIsSpinning(true);
     setShowResult(false);
     setDisplayScore(0);
@@ -52,6 +59,9 @@ const LoveMeter = () => {
   const circumference = 2 * Math.PI * 70;
   const strokeDashoffset = circumference - (displayScore / 100) * circumference;
 
+  const displayName1 = name1.trim() || "Partner 1";
+  const displayName2 = name2.trim() || "Partner 2";
+
   return (
     <div className="relative max-w-sm mx-auto">
       {/* Glow background */}
@@ -66,12 +76,41 @@ const LoveMeter = () => {
           </div>
         </div>
         
-        <h3 className="font-display text-xl text-center text-foreground mb-6">
+        <h3 className="font-display text-xl text-center text-foreground mb-5">
           Love Compatibility <span className="text-gradient-romantic">Meter</span>
         </h3>
 
+        {/* Name inputs */}
+        <div className="space-y-3 mb-6">
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-rose" />
+            <Input
+              type="text"
+              placeholder="Your name"
+              value={name1}
+              onChange={(e) => setName1(e.target.value.slice(0, 20))}
+              className="pl-10 bg-secondary/50 border-rose-light/30 focus:border-rose placeholder:text-muted-foreground/60"
+              maxLength={20}
+            />
+          </div>
+          <div className="flex items-center justify-center">
+            <Heart className="w-5 h-5 text-love fill-current animate-heartbeat" />
+          </div>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-love" />
+            <Input
+              type="text"
+              placeholder="Partner's name"
+              value={name2}
+              onChange={(e) => setName2(e.target.value.slice(0, 20))}
+              className="pl-10 bg-secondary/50 border-rose-light/30 focus:border-rose placeholder:text-muted-foreground/60"
+              maxLength={20}
+            />
+          </div>
+        </div>
+
         {/* Circular gauge */}
-        <div className="relative w-44 h-44 mx-auto mb-6">
+        <div className="relative w-40 h-40 mx-auto mb-5">
           {/* Background circle */}
           <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
             <circle
@@ -108,20 +147,20 @@ const LoveMeter = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {isSpinning ? (
               <div className="relative">
-                <Heart className="w-12 h-12 text-rose animate-spin" />
+                <Heart className="w-10 h-10 text-rose animate-spin" />
                 <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-amber animate-pulse" />
               </div>
             ) : loveScore !== null ? (
               <>
-                <span className="font-display text-4xl text-gradient-romantic font-bold">
+                <span className="font-display text-3xl text-gradient-romantic font-bold">
                   {displayScore}%
                 </span>
-                <span className="text-2xl mt-1">{getLoveMessage(displayScore).emoji}</span>
+                <span className="text-xl mt-1">{getLoveMessage(displayScore).emoji}</span>
               </>
             ) : (
-              <div className="text-center">
-                <Heart className="w-10 h-10 text-rose-light mx-auto mb-2" />
-                <span className="text-sm text-muted-foreground">Tap to reveal</span>
+              <div className="text-center px-2">
+                <Heart className="w-8 h-8 text-rose-light mx-auto mb-1" />
+                <span className="text-xs text-muted-foreground">Enter names above</span>
               </div>
             )}
           </div>
@@ -149,11 +188,14 @@ const LoveMeter = () => {
         {/* Result message */}
         {showResult && loveScore !== null && (
           <div className="text-center mb-4 animate-fade-in">
-            <p className="font-display text-lg text-foreground">
+            <p className="font-display text-base text-foreground">
+              {displayName1} & {displayName2}
+            </p>
+            <p className="font-display text-lg text-gradient-romantic">
               {getLoveMessage(loveScore).message}
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Your bears are meant to be! 🧸❤️🧸
+            <p className="text-xs text-muted-foreground mt-1">
+              A perfect match made in heaven! 🧸❤️🧸
             </p>
           </div>
         )}
@@ -161,7 +203,7 @@ const LoveMeter = () => {
         {/* Spin button */}
         <Button
           onClick={spinMeter}
-          disabled={isSpinning}
+          disabled={isSpinning || !canSpin}
           variant="romantic"
           className="w-full"
         >
