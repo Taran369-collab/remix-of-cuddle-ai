@@ -102,8 +102,8 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
-          toast.success("Account created successfully!");
-          navigate("/");
+          toast.success("Account created! You can now become admin.");
+          // Stay on auth page so user can click "Make Me Admin"
         }
       }
     } catch (err) {
