@@ -1,0 +1,172 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Heart, ArrowLeft, Users, Loader2, User, Shield, Calendar
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+
+interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  is_admin?: boolean;
+}
+
+const AdminUsers = () => {
+  const { isAdmin, isLoading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authLoading && !isAdmin) {
+      navigate("/");
+      return;
+    }
+    fetchUsers();
+  }, [authLoading, isAdmin, navigate]);
+
+  const fetchUsers = async () => {
+    try {
+      // Fetch all profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Fetch admin user IDs
+      const { data: adminRoles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      if (rolesError) throw rolesError;
+
+      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+
+      // Combine data
+      const usersWithRoles = (profiles || []).map(profile => ({
+        ...profile,
+        is_admin: adminUserIds.has(profile.user_id),
+      }));
+
+      setUsers(usersWithRoles);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      toast.error("Failed to load users");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center">
+        <Loader2 className="animate-spin text-rose" size={32} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-dreamy">
+      {/* Header */}
+      <header className="bg-card/60 backdrop-blur-sm border-b border-rose-light/20 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin")}>
+              <ArrowLeft size={18} className="mr-1" />
+              Back
+            </Button>
+            <Heart className="text-rose fill-current" size={24} />
+            <span className="font-display text-xl text-foreground">
+              User Management
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-rose-light/20 text-center">
+            <p className="text-2xl font-display text-rose">{users.length}</p>
+            <p className="text-sm text-muted-foreground">Total Users</p>
+          </div>
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-rose-light/20 text-center">
+            <p className="text-2xl font-display text-rose">
+              {users.filter(u => u.is_admin).length}
+            </p>
+            <p className="text-sm text-muted-foreground">Admins</p>
+          </div>
+          <div className="bg-card/80 backdrop-blur-sm rounded-xl p-4 border border-rose-light/20 text-center col-span-2 md:col-span-1">
+            <p className="text-2xl font-display text-rose">
+              {users.filter(u => !u.is_admin).length}
+            </p>
+            <p className="text-sm text-muted-foreground">Regular Users</p>
+          </div>
+        </div>
+
+        {/* Users List */}
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20">
+          <h2 className="font-display text-xl text-foreground mb-4 flex items-center gap-2">
+            <Users size={20} className="text-rose" />
+            Registered Users
+          </h2>
+
+          {users.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Users size={48} className="mx-auto mb-4 opacity-50" />
+              <p>No users registered yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-rose-light/20"
+                >
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={user.avatar_url || undefined} alt={user.email || "User"} />
+                    <AvatarFallback className="bg-rose-light text-rose">
+                      <User size={20} />
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground truncate">
+                        {user.email || "No email"}
+                      </p>
+                      {user.is_admin && (
+                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-rose/10 text-rose text-xs font-medium rounded-full">
+                          <Shield size={12} />
+                          Admin
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Calendar size={14} />
+                      <span>Joined {format(new Date(user.created_at), "MMM d, yyyy")}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default AdminUsers;

@@ -1,7 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Settings } from "lucide-react";
+import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Settings, Users } from "lucide-react";
 
 const AdminDashboard = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -103,19 +103,21 @@ const AdminDashboard = () => {
             </div>
           </Link>
 
-          {/* Settings */}
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
-              <Settings className="text-rose" size={24} />
+          {/* User Management */}
+          <Link to="/admin/users" className="block">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
+                <Users className="text-rose" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">User Management</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                View registered users and manage roles.
+              </p>
+              <Button variant="romantic" size="sm" className="w-full">
+                View Users
+              </Button>
             </div>
-            <h3 className="font-display text-lg text-foreground mb-2">Site Settings</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Configure website appearance and settings.
-            </p>
-            <Button variant="soft" size="sm" className="w-full">
-              Coming Soon
-            </Button>
-          </div>
+          </Link>
         </div>
 
         {/* Stats */}
