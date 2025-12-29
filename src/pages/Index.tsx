@@ -1,8 +1,11 @@
 import { useState, useCallback } from "react";
-import { Heart, Sparkles, Star } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Heart, Sparkles, Star, Shield, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
+import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
 
@@ -16,6 +19,7 @@ const poses = [
 ];
 
 const Index = () => {
+  const { user, isAdmin, signOut, isLoading } = useAuth();
   const [currentImage, setCurrentImage] = useState(teddyHeroImage);
   const [currentPose, setCurrentPose] = useState("Cuddling Together");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,6 +37,10 @@ const Index = () => {
     }, 2000);
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <>
       <Helmet>
@@ -42,6 +50,34 @@ const Index = () => {
 
       <div className="min-h-screen bg-gradient-dreamy relative overflow-hidden">
         <FloatingHearts />
+
+        {/* Admin Header */}
+        {!isLoading && (
+          <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="soft" size="sm">
+                      <Shield size={16} className="mr-1" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut size={16} />
+                </Button>
+              </>
+            ) : (
+              <Link to="/auth">
+                <Button variant="soft" size="sm">
+                  <Shield size={16} className="mr-1" />
+                  Admin Login
+                </Button>
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Background decorative elements */}
         <div className="absolute top-20 left-10 text-rose-light opacity-30 animate-float">
