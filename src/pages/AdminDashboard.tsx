@@ -1,7 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Settings, Users } from "lucide-react";
+import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Users, BarChart3 } from "lucide-react";
 
 const AdminDashboard = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -118,32 +118,22 @@ const AdminDashboard = () => {
               </Button>
             </div>
           </Link>
-        </div>
 
-        {/* Stats */}
-        <div className="mt-12 bg-card/60 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="text-amber" size={20} />
-            <h2 className="font-display text-xl text-foreground">Quick Stats</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
-              <p className="text-2xl font-display text-rose">1</p>
-              <p className="text-sm text-muted-foreground">Total Images</p>
+          {/* Analytics */}
+          <Link to="/admin/analytics" className="block">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
+                <BarChart3 className="text-rose" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Analytics</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Track love calculations and usage stats.
+              </p>
+              <Button variant="romantic" size="sm" className="w-full">
+                View Analytics
+              </Button>
             </div>
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
-              <p className="text-2xl font-display text-rose">8</p>
-              <p className="text-sm text-muted-foreground">Love Messages</p>
-            </div>
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
-              <p className="text-2xl font-display text-rose">6</p>
-              <p className="text-sm text-muted-foreground">Pose Types</p>
-            </div>
-            <div className="text-center p-4 bg-secondary/50 rounded-xl">
-              <p className="text-2xl font-display text-rose">∞</p>
-              <p className="text-sm text-muted-foreground">Love Generated</p>
-            </div>
-          </div>
+          </Link>
         </div>
       </main>
     </div>
