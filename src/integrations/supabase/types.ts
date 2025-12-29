@@ -68,6 +68,30 @@ export type Database = {
         }
         Relationships: []
       }
+      teddy_images: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          pose_name: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pose_name: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          pose_name?: string
+          url?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

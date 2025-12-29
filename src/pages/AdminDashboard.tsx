@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Settings } from "lucide-react";
@@ -73,18 +72,20 @@ const AdminDashboard = () => {
         {/* Dashboard Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Manage Images */}
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
-              <Image className="text-rose" size={24} />
+          <Link to="/admin/images" className="block">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
+                <Image className="text-rose" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Teddy Images</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Upload and manage teddy bear couple images.
+              </p>
+              <Button variant="romantic" size="sm" className="w-full">
+                Manage Images
+              </Button>
             </div>
-            <h3 className="font-display text-lg text-foreground mb-2">Teddy Images</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Upload and manage teddy bear couple images.
-            </p>
-            <Button variant="soft" size="sm" className="w-full">
-              Coming Soon
-            </Button>
-          </div>
+          </Link>
 
           {/* Manage Messages */}
           <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300">
