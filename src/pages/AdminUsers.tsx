@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
-  Heart, ArrowLeft, Users, Loader2, User, Shield, Calendar
+  Heart, ArrowLeft, Users, Loader2, User, Shield, Calendar, Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -28,6 +28,7 @@ const AdminUsers = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -120,6 +121,46 @@ const AdminUsers = () => {
     }
   };
 
+  const handleDeleteUser = async (userProfile: UserProfile) => {
+    // Prevent deleting yourself
+    if (userProfile.user_id === currentUser?.id) {
+      toast.error("You cannot delete your own account");
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${userProfile.email}? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingUserId(userProfile.user_id);
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke("delete-user", {
+        body: { userId: userProfile.user_id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to delete user");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast.success(`User ${userProfile.email} deleted successfully`);
+      
+      // Remove from local state
+      setUsers(prev => prev.filter(u => u.user_id !== userProfile.user_id));
+    } catch (err: any) {
+      console.error("Delete user error:", err);
+      toast.error(err.message || "Failed to delete user");
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center">
@@ -184,6 +225,7 @@ const AdminUsers = () => {
               {users.map((user) => {
                 const isCurrentUser = user.user_id === currentUser?.id;
                 const isToggling = togglingUserId === user.user_id;
+                const isDeleting = deletingUserId === user.user_id;
 
                 return (
                   <div
@@ -230,12 +272,29 @@ const AdminUsers = () => {
                         id={`admin-toggle-${user.id}`}
                         checked={user.is_admin}
                         onCheckedChange={() => handleToggleAdmin(user)}
-                        disabled={isCurrentUser || isToggling}
+                        disabled={isCurrentUser || isToggling || isDeleting}
                       />
                       {isToggling && (
                         <Loader2 className="animate-spin text-rose" size={16} />
                       )}
                     </div>
+
+                    {/* Delete Button */}
+                    {!isCurrentUser && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteUser(user)}
+                        disabled={isDeleting || isToggling}
+                        className="shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                          <Trash2 size={16} />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 );
               })}
