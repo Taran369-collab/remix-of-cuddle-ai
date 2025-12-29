@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save
-} from "lucide-react";
+import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Profile = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [joinedDate, setJoinedDate] = useState<string>("");
 
   useEffect(() => {
@@ -34,8 +36,98 @@ const Profile = () => {
           day: "numeric",
         })
       );
+      fetchProfile();
     }
   }, [user, authLoading, navigate]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      } else if (user.user_metadata?.avatar_url) {
+        setAvatarUrl(user.user_metadata.avatar_url);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be less than 2MB");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      // Create unique file path
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // Add cache-busting query param
+      const avatarUrlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+
+      // Update profile in database
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrlWithTimestamp })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(avatarUrlWithTimestamp);
+      toast.success("Avatar updated successfully!");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Failed to upload avatar");
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,12 +190,41 @@ const Profile = () => {
         <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30">
           {/* Avatar Section */}
           <div className="flex flex-col items-center mb-8">
-            <Avatar className="h-24 w-24 mb-4 ring-4 ring-rose-light/30">
-              <AvatarImage src={user.user_metadata?.avatar_url} alt={displayName || "User"} />
-              <AvatarFallback className="bg-rose-light text-rose text-2xl">
-                <User size={40} />
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="h-24 w-24 mb-4 ring-4 ring-rose-light/30">
+                <AvatarImage src={avatarUrl || user.user_metadata?.avatar_url} alt={displayName || "User"} />
+                <AvatarFallback className="bg-rose-light text-rose text-2xl">
+                  <User size={40} />
+                </AvatarFallback>
+              </Avatar>
+              
+              {/* Upload overlay */}
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                disabled={isUploadingAvatar}
+                className="absolute inset-0 mb-4 flex items-center justify-center bg-foreground/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isUploadingAvatar ? (
+                  <Loader2 className="h-6 w-6 text-background animate-spin" />
+                ) : (
+                  <Camera className="h-6 w-6 text-background" />
+                )}
+              </button>
+              
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
+            </div>
+            
+            <p className="text-xs text-muted-foreground mb-2">
+              Click to upload a new photo
+            </p>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <Calendar size={14} />
               Joined {joinedDate}

@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Heart, Sparkles, Star, Shield, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
@@ -26,6 +27,34 @@ const Index = () => {
   const [currentPose, setCurrentPose] = useState("Cuddling Together");
   const [isGenerating, setIsGenerating] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) {
+        setAvatarUrl(null);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("user_id", user.id)
+          .single();
+
+        if (data?.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+        } else {
+          setAvatarUrl(user.user_metadata?.avatar_url || null);
+        }
+      } catch {
+        setAvatarUrl(user.user_metadata?.avatar_url || null);
+      }
+    };
+
+    fetchAvatar();
+  }, [user]);
 
   const handleGenerateNew = useCallback(() => {
     setIsGenerating(true);
@@ -61,7 +90,7 @@ const Index = () => {
                 {/* User Avatar and Email - Clickable to Profile */}
                 <Link to="/profile" className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 border border-rose-light/30 hover:bg-card/90 transition-colors cursor-pointer">
                   <Avatar className="h-7 w-7">
-                    <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || "User"} />
+                    <AvatarImage src={avatarUrl || user.user_metadata?.avatar_url} alt={user.email || "User"} />
                     <AvatarFallback className="bg-rose-light text-rose text-xs">
                       <User size={14} />
                     </AvatarFallback>
