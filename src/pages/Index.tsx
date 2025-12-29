@@ -8,6 +8,7 @@ import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
 import LoveMeter from "@/components/LoveMeter";
+import AdPlacement from "@/components/AdPlacement";
 import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
@@ -135,6 +136,14 @@ const Index = () => {
 
         {/* Main content */}
         <div className="relative z-10 container mx-auto px-4 py-12 md:py-20">
+          {/* Top Leaderboard Ad */}
+          <div className="mb-8 hidden md:block">
+            <AdPlacement size="leaderboard" id="ad-top-leaderboard" />
+          </div>
+          <div className="mb-6 md:hidden">
+            <AdPlacement size="banner" id="ad-top-mobile" />
+          </div>
+
           {/* Header */}
           <header className="text-center mb-12 md:mb-16">
             <div className="inline-flex items-center gap-3 mb-4">
@@ -156,7 +165,7 @@ const Index = () => {
           <LoveMessage messageIndex={messageIndex} />
 
           {/* Main Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto mb-16 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto mb-8 items-start">
             {/* Teddy Card */}
             <div className="lg:order-1">
               <TeddyCard
@@ -171,6 +180,11 @@ const Index = () => {
             <div className="lg:order-2">
               <LoveMeter />
             </div>
+          </div>
+
+          {/* Mid-Content Rectangle Ad */}
+          <div className="mb-12 flex justify-center">
+            <AdPlacement size="rectangle" id="ad-mid-rectangle" />
           </div>
 
           {/* Features */}
@@ -191,6 +205,14 @@ const Index = () => {
                 <p className="font-body text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* Bottom Banner Ad */}
+          <div className="mt-12 hidden md:block">
+            <AdPlacement size="leaderboard" id="ad-bottom-leaderboard" />
+          </div>
+          <div className="mt-8 md:hidden">
+            <AdPlacement size="banner" id="ad-bottom-mobile" />
           </div>
 
           {/* Footer */}
