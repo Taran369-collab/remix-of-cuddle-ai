@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
+import LoveMeter from "@/components/LoveMeter";
 import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
@@ -112,14 +113,22 @@ const Index = () => {
           {/* Love Message */}
           <LoveMessage messageIndex={messageIndex} />
 
-          {/* Teddy Card */}
-          <div className="max-w-lg mx-auto mb-16">
-            <TeddyCard
-              imageSrc={currentImage}
-              pose={currentPose}
-              onGenerateNew={handleGenerateNew}
-              isGenerating={isGenerating}
-            />
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto mb-16 items-start">
+            {/* Teddy Card */}
+            <div className="lg:order-1">
+              <TeddyCard
+                imageSrc={currentImage}
+                pose={currentPose}
+                onGenerateNew={handleGenerateNew}
+                isGenerating={isGenerating}
+              />
+            </div>
+            
+            {/* Love Meter */}
+            <div className="lg:order-2">
+              <LoveMeter />
+            </div>
           </div>
 
           {/* Features */}
