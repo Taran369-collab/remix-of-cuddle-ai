@@ -1,6 +1,8 @@
+import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
-const loveMessages = [
+const defaultMessages = [
   "Forever & Always",
   "Two Hearts, One Love",
   "Together is Our Favorite Place",
@@ -16,7 +18,32 @@ interface LoveMessageProps {
 }
 
 const LoveMessage = ({ messageIndex }: LoveMessageProps) => {
-  const message = loveMessages[messageIndex % loveMessages.length];
+  const [messages, setMessages] = useState<string[]>(defaultMessages);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("love_messages")
+          .select("message")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          setMessages(data.map(m => m.message));
+        }
+      } catch (err) {
+        // Silently fall back to default messages
+        console.error("Failed to load messages:", err);
+      }
+    };
+
+    fetchMessages();
+  }, []);
+
+  const message = messages[messageIndex % messages.length];
 
   return (
     <div className="flex items-center justify-center gap-3 py-8">

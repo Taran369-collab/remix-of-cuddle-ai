@@ -88,18 +88,20 @@ const AdminDashboard = () => {
           </Link>
 
           {/* Manage Messages */}
-          <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300">
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
-              <MessageSquare className="text-rose" size={24} />
+          <Link to="/admin/messages" className="block">
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4">
+                <MessageSquare className="text-rose" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Love Messages</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Edit and customize the romantic messages.
+              </p>
+              <Button variant="romantic" size="sm" className="w-full">
+                Manage Messages
+              </Button>
             </div>
-            <h3 className="font-display text-lg text-foreground mb-2">Love Messages</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Edit and customize the romantic messages.
-            </p>
-            <Button variant="soft" size="sm" className="w-full">
-              Coming Soon
-            </Button>
-          </div>
+          </Link>
 
           {/* Settings */}
           <div className="bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-rose-light/20 shadow-romantic hover:shadow-glow transition-all duration-300">
