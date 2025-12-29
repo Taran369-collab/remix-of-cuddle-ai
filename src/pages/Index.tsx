@@ -138,10 +138,10 @@ const Index = () => {
         <div className="relative z-10 container mx-auto px-4 py-12 md:py-20">
           {/* Top Leaderboard Ad */}
           <div className="mb-8 hidden md:block">
-            <AdPlacement size="leaderboard" id="ad-top-leaderboard" />
+            <AdPlacement size="leaderboard" id="ad-top-leaderboard" adSlot="YOUR_AD_SLOT_1" />
           </div>
           <div className="mb-6 md:hidden">
-            <AdPlacement size="banner" id="ad-top-mobile" />
+            <AdPlacement size="banner" id="ad-top-mobile" adSlot="YOUR_AD_SLOT_2" />
           </div>
 
           {/* Header */}
@@ -184,7 +184,7 @@ const Index = () => {
 
           {/* Mid-Content Rectangle Ad */}
           <div className="mb-12 flex justify-center">
-            <AdPlacement size="rectangle" id="ad-mid-rectangle" />
+            <AdPlacement size="rectangle" id="ad-mid-rectangle" adSlot="YOUR_AD_SLOT_3" />
           </div>
 
           {/* Features */}
@@ -209,10 +209,10 @@ const Index = () => {
 
           {/* Bottom Banner Ad */}
           <div className="mt-12 hidden md:block">
-            <AdPlacement size="leaderboard" id="ad-bottom-leaderboard" />
+            <AdPlacement size="leaderboard" id="ad-bottom-leaderboard" adSlot="YOUR_AD_SLOT_4" />
           </div>
           <div className="mt-8 md:hidden">
-            <AdPlacement size="banner" id="ad-bottom-mobile" />
+            <AdPlacement size="banner" id="ad-bottom-mobile" adSlot="YOUR_AD_SLOT_5" />
           </div>
 
           {/* Footer */}
