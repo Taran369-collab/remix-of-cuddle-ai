@@ -58,8 +58,8 @@ const Index = () => {
           <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
             {user ? (
               <>
-                {/* User Avatar and Email */}
-                <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 border border-rose-light/30">
+                {/* User Avatar and Email - Clickable to Profile */}
+                <Link to="/profile" className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 border border-rose-light/30 hover:bg-card/90 transition-colors cursor-pointer">
                   <Avatar className="h-7 w-7">
                     <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || "User"} />
                     <AvatarFallback className="bg-rose-light text-rose text-xs">
@@ -69,7 +69,7 @@ const Index = () => {
                   <span className="text-sm text-foreground max-w-[120px] truncate hidden sm:block">
                     {user.user_metadata?.full_name || user.email?.split("@")[0]}
                   </span>
-                </div>
+                </Link>
                 {isAdmin && (
                   <Link to="/admin">
                     <Button variant="soft" size="sm">
