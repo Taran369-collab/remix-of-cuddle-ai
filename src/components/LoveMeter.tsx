@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Heart, Sparkles, Stars, User, History, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ const loveMessages = [
   { min: 0, message: "Love Is Brewing...", emoji: "💫" },
 ];
 
-const LoveMeter = () => {
+const LoveMeter = forwardRef<HTMLDivElement>((_, ref) => {
   const { user } = useAuth();
   const [name1, setName1] = useState("");
   const [name2, setName2] = useState("");
@@ -159,7 +159,7 @@ const LoveMeter = () => {
   const displayName2 = name2.trim() || "Partner 2";
 
   return (
-    <div className="relative max-w-sm mx-auto">
+    <div ref={ref} className="relative max-w-sm mx-auto">
       <div className="absolute -inset-6 bg-gradient-to-r from-rose-light via-love to-rose-light rounded-full opacity-20 blur-3xl animate-pulse-soft" />
       
       <div className="relative bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30">
@@ -373,6 +373,8 @@ const LoveMeter = () => {
       </div>
     </div>
   );
-};
+});
+
+LoveMeter.displayName = "LoveMeter";
 
 export default LoveMeter;
