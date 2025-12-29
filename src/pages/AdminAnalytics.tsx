@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { 
   Heart, ArrowLeft, Loader2, TrendingUp, Calendar, 
-  BarChart3, Users, Sparkles
+  BarChart3, Users, Sparkles, Download
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
@@ -24,11 +24,22 @@ interface Analytics {
   dailyStats: DailyStats[];
 }
 
+interface LoveResult {
+  id: string;
+  name1: string;
+  name2: string;
+  score: number;
+  message: string;
+  user_id: string;
+  created_at: string;
+}
+
 const AdminAnalytics = () => {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  const [allResults, setAllResults] = useState<LoveResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -49,6 +60,7 @@ const AdminAnalytics = () => {
 
       if (error) throw error;
 
+      setAllResults(results || []);
       const now = new Date();
       const todayStart = startOfDay(now);
       const weekStart = startOfDay(subDays(now, 7));
@@ -104,6 +116,35 @@ const AdminAnalytics = () => {
     }
   };
 
+  const exportToCsv = () => {
+    if (allResults.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const headers = ["Date", "Name 1", "Name 2", "Score", "Message", "User ID"];
+    const csvContent = [
+      headers.join(","),
+      ...allResults.map(result => [
+        format(new Date(result.created_at), "yyyy-MM-dd HH:mm:ss"),
+        `"${result.name1.replace(/"/g, '""')}"`,
+        `"${result.name2.replace(/"/g, '""')}"`,
+        result.score,
+        `"${result.message.replace(/"/g, '""')}"`,
+        result.user_id,
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `love-analytics-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+    
+    toast.success("Analytics exported successfully");
+  };
+
   if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center">
@@ -129,6 +170,15 @@ const AdminAnalytics = () => {
               Analytics
             </span>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportToCsv}
+            disabled={allResults.length === 0}
+          >
+            <Download size={16} className="mr-1" />
+            Export CSV
+          </Button>
         </div>
       </header>
 
