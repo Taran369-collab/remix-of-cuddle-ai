@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Heart, ArrowLeft, Users, Loader2, User, Shield, Calendar
 } from "lucide-react";
@@ -20,11 +22,12 @@ interface UserProfile {
 }
 
 const AdminUsers = () => {
-  const { isAdmin, isLoading: authLoading } = useAuth();
+  const { isAdmin, isLoading: authLoading, user: currentUser } = useAuth();
   const navigate = useNavigate();
   
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [togglingUserId, setTogglingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -66,6 +69,54 @@ const AdminUsers = () => {
       toast.error("Failed to load users");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleToggleAdmin = async (userProfile: UserProfile) => {
+    // Prevent removing your own admin role
+    if (userProfile.user_id === currentUser?.id) {
+      toast.error("You cannot modify your own admin status");
+      return;
+    }
+
+    setTogglingUserId(userProfile.user_id);
+
+    try {
+      if (userProfile.is_admin) {
+        // Remove admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", userProfile.user_id)
+          .eq("role", "admin");
+
+        if (error) throw error;
+        
+        toast.success(`Admin role revoked from ${userProfile.email}`);
+      } else {
+        // Grant admin role
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userProfile.user_id, role: "admin" });
+
+        if (error) throw error;
+        
+        toast.success(`Admin role granted to ${userProfile.email}`);
+      }
+
+      // Update local state
+      setUsers(prev => 
+        prev.map(u => 
+          u.user_id === userProfile.user_id 
+            ? { ...u, is_admin: !u.is_admin } 
+            : u
+        )
+      );
+    } catch (err: any) {
+      console.error("Toggle admin error:", err);
+      toast.error(err.message || "Failed to update admin status");
+    } finally {
+      setTogglingUserId(null);
     }
   };
 
@@ -130,37 +181,64 @@ const AdminUsers = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-rose-light/20"
-                >
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={user.avatar_url || undefined} alt={user.email || "User"} />
-                    <AvatarFallback className="bg-rose-light text-rose">
-                      <User size={20} />
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground truncate">
-                        {user.email || "No email"}
-                      </p>
-                      {user.is_admin && (
-                        <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-rose/10 text-rose text-xs font-medium rounded-full">
-                          <Shield size={12} />
-                          Admin
-                        </span>
+              {users.map((user) => {
+                const isCurrentUser = user.user_id === currentUser?.id;
+                const isToggling = togglingUserId === user.user_id;
+
+                return (
+                  <div
+                    key={user.id}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-secondary/30 border border-rose-light/20"
+                  >
+                    <Avatar className="h-12 w-12 shrink-0">
+                      <AvatarImage src={user.avatar_url || undefined} alt={user.email || "User"} />
+                      <AvatarFallback className="bg-rose-light text-rose">
+                        <User size={20} />
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-foreground truncate">
+                          {user.email || "No email"}
+                        </p>
+                        {isCurrentUser && (
+                          <span className="shrink-0 text-xs text-muted-foreground">(you)</span>
+                        )}
+                        {user.is_admin && (
+                          <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 bg-rose/10 text-rose text-xs font-medium rounded-full">
+                            <Shield size={12} />
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Calendar size={14} />
+                        <span>Joined {format(new Date(user.created_at), "MMM d, yyyy")}</span>
+                      </div>
+                    </div>
+
+                    {/* Admin Toggle */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Label 
+                        htmlFor={`admin-toggle-${user.id}`} 
+                        className="text-xs text-muted-foreground hidden sm:block"
+                      >
+                        Admin
+                      </Label>
+                      <Switch
+                        id={`admin-toggle-${user.id}`}
+                        checked={user.is_admin}
+                        onCheckedChange={() => handleToggleAdmin(user)}
+                        disabled={isCurrentUser || isToggling}
+                      />
+                      {isToggling && (
+                        <Loader2 className="animate-spin text-rose" size={16} />
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Calendar size={14} />
-                      <span>Joined {format(new Date(user.created_at), "MMM d, yyyy")}</span>
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
