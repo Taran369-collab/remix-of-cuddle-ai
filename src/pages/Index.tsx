@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Sparkles, Star, Shield, LogOut } from "lucide-react";
+import { Heart, Sparkles, Star, Shield, LogOut, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
@@ -54,9 +55,21 @@ const Index = () => {
 
         {/* Admin Header */}
         {!isLoading && (
-          <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+          <div className="absolute top-4 right-4 z-20 flex items-center gap-3">
             {user ? (
               <>
+                {/* User Avatar and Email */}
+                <div className="flex items-center gap-2 bg-card/80 backdrop-blur-sm rounded-full pl-1 pr-3 py-1 border border-rose-light/30">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || "User"} />
+                    <AvatarFallback className="bg-rose-light text-rose text-xs">
+                      <User size={14} />
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm text-foreground max-w-[120px] truncate hidden sm:block">
+                    {user.user_metadata?.full_name || user.email?.split("@")[0]}
+                  </span>
+                </div>
                 {isAdmin && (
                   <Link to="/admin">
                     <Button variant="soft" size="sm">
