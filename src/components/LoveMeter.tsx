@@ -48,14 +48,14 @@ const LoveMeter = () => {
     setLoadingHistory(true);
     try {
       const { data, error } = await supabase
-        .from("love_results")
+        .from("love_results" as any)
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(10);
 
       if (error) throw error;
-      setHistory(data || []);
+      setHistory((data as unknown as LoveResult[]) || []);
     } catch (error) {
       console.error("Error fetching history:", error);
     } finally {
@@ -67,7 +67,7 @@ const LoveMeter = () => {
     if (!user) return;
     
     try {
-      const { error } = await supabase.from("love_results").insert({
+      const { error } = await supabase.from("love_results" as any).insert({
         user_id: user.id,
         name1: n1,
         name2: n2,
@@ -85,7 +85,7 @@ const LoveMeter = () => {
 
   const deleteResult = async (id: string) => {
     try {
-      const { error } = await supabase.from("love_results").delete().eq("id", id);
+      const { error } = await supabase.from("love_results" as any).delete().eq("id", id);
       if (error) throw error;
       toast.success("Deleted from history");
       fetchHistory();
@@ -122,7 +122,6 @@ const LoveMeter = () => {
           setShowResult(true);
           clearInterval(timer);
           
-          // Auto-save if user is logged in
           if (user) {
             const msg = getLoveMessage(newScore);
             saveResult(name1.trim(), name2.trim(), newScore, msg.message);
