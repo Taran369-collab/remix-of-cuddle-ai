@@ -5,6 +5,13 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
+
+// Validation schema for names
+const nameSchema = z.string()
+  .min(1, "Name is required")
+  .max(20, "Name must be 20 characters or less")
+  .regex(/^[a-zA-Z0-9\s\-']+$/, "Name contains invalid characters");
 
 interface LoveResult {
   id: string;
@@ -57,7 +64,8 @@ const LoveMeter = () => {
       if (error) throw error;
       setHistory((data as unknown as LoveResult[]) || []);
     } catch (error) {
-      console.error("Error fetching history:", error);
+      if (import.meta.env.DEV) console.error("Error fetching history:", error);
+      toast.error("Failed to load history");
     } finally {
       setLoadingHistory(false);
     }
@@ -66,20 +74,30 @@ const LoveMeter = () => {
   const saveResult = async (n1: string, n2: string, score: number, message: string) => {
     if (!user) return;
     
+    // Validate names before saving
+    const name1Result = nameSchema.safeParse(n1);
+    const name2Result = nameSchema.safeParse(n2);
+    
+    if (!name1Result.success || !name2Result.success) {
+      toast.error("Invalid name format");
+      return;
+    }
+    
     try {
       const { error } = await supabase.from("love_results" as any).insert({
         user_id: user.id,
-        name1: n1,
-        name2: n2,
+        name1: n1.substring(0, 100), // Enforce max length
+        name2: n2.substring(0, 100),
         score,
-        message,
+        message: message.substring(0, 500),
       });
 
       if (error) throw error;
       toast.success("Result saved to your history!");
       fetchHistory();
     } catch (error) {
-      console.error("Error saving result:", error);
+      if (import.meta.env.DEV) console.error("Error saving result:", error);
+      toast.error("Failed to save result");
     }
   };
 
@@ -90,7 +108,8 @@ const LoveMeter = () => {
       toast.success("Deleted from history");
       fetchHistory();
     } catch (error) {
-      console.error("Error deleting result:", error);
+      if (import.meta.env.DEV) console.error("Error deleting result:", error);
+      toast.error("Failed to delete");
     }
   };
 
