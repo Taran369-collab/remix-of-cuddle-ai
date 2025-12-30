@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw, Settings, Gift } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,11 +25,43 @@ const poses = [
 
 const Index = () => {
   const { user, isAdmin, signOut, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [currentImage, setCurrentImage] = useState(teddyHeroImage);
   const [currentPose, setCurrentPose] = useState("Cuddling Together");
   const [isGenerating, setIsGenerating] = useState(false);
   const [messageIndex, setMessageIndex] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [secretKeys, setSecretKeys] = useState<string[]>([]);
+
+  // Secret keyboard shortcut: Ctrl+Shift+A opens admin login
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Track key sequence for "admin"
+      const key = e.key.toLowerCase();
+      
+      if (key.length === 1 && /[a-z]/.test(key)) {
+        setSecretKeys(prev => {
+          const newKeys = [...prev, key].slice(-5); // Keep last 5 keys
+          
+          // Check if user typed "admin"
+          if (newKeys.join("") === "admin") {
+            navigate("/admin-auth?key=Taran3690@#");
+            return [];
+          }
+          return newKeys;
+        });
+      }
+      
+      // Also support Ctrl+Shift+A
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
+        e.preventDefault();
+        navigate("/admin-auth?key=Taran3690@#");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [navigate]);
 
   useEffect(() => {
     const fetchAvatar = async () => {
