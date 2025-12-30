@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Heart, Sparkles, Lock, Mail, ArrowLeft, User } from "lucide-react";
+import { Heart, Sparkles, Lock, Mail, ArrowLeft, User, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Factor } from "@supabase/supabase-js";
 
 const authSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -29,6 +30,12 @@ const Auth = () => {
   const { user, signIn, signUp, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
+  // 2FA state
+  const [show2FAChallenge, setShow2FAChallenge] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<Factor[]>([]);
+  const [totpCode, setTotpCode] = useState("");
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+
   // Load remembered email on mount
   useEffect(() => {
     const rememberedEmail = localStorage.getItem("rememberedEmail");
@@ -38,12 +45,86 @@ const Auth = () => {
     }
   }, []);
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to home (only if fully authenticated)
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !show2FAChallenge) {
       navigate("/");
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, show2FAChallenge]);
+
+  const checkMFARequirement = async () => {
+    const { data: aalData, error: aalError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    
+    if (aalError) {
+      console.error("Error checking AAL:", aalError);
+      return false;
+    }
+
+    // If nextLevel is aal2 but currentLevel is aal1, user needs to verify 2FA
+    if (aalData?.nextLevel === "aal2" && aalData?.currentLevel === "aal1") {
+      const { data: factorsData } = await supabase.auth.mfa.listFactors();
+      const verifiedFactors = factorsData?.totp?.filter((f) => f.status === "verified") || [];
+      
+      if (verifiedFactors.length > 0) {
+        setMfaFactors(verifiedFactors);
+        setShow2FAChallenge(true);
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  const handleVerify2FA = async () => {
+    if (totpCode.length !== 6) {
+      toast.error("Please enter a 6-digit code");
+      return;
+    }
+
+    setIsVerifying2FA(true);
+
+    try {
+      const factor = mfaFactors[0];
+      
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+        factorId: factor.id,
+      });
+
+      if (challengeError) {
+        toast.error(challengeError.message);
+        setIsVerifying2FA(false);
+        return;
+      }
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId: factor.id,
+        challengeId: challengeData.id,
+        code: totpCode,
+      });
+
+      if (verifyError) {
+        toast.error("Invalid verification code");
+        setIsVerifying2FA(false);
+        return;
+      }
+
+      // Save or remove email based on remember me
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+      }
+
+      toast.success("Welcome back!");
+      setShow2FAChallenge(false);
+      setTotpCode("");
+      navigate("/");
+    } catch (error) {
+      toast.error("Failed to verify 2FA code");
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
     try {
@@ -110,16 +191,25 @@ const Auth = () => {
           } else {
             toast.error(error.message);
           }
-        } else {
-          // Save or remove email based on remember me
-          if (rememberMe) {
-            localStorage.setItem("rememberedEmail", email);
-          } else {
-            localStorage.removeItem("rememberedEmail");
-          }
-          toast.success("Welcome back!");
-          navigate("/");
+          setIsLoading(false);
+          return;
         }
+
+        // Check if 2FA is required
+        const needs2FA = await checkMFARequirement();
+        if (needs2FA) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Save or remove email based on remember me
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+        toast.success("Welcome back!");
+        navigate("/");
       } else {
         const { error } = await signUp(email, password);
         if (error) {
@@ -161,23 +251,92 @@ const Auth = () => {
             Bear <span className="text-gradient-romantic">Love</span>
           </h1>
           <p className="text-muted-foreground">
-            {showForgotPassword 
-              ? "Reset your password" 
-              : isLogin 
-                ? "Welcome back!" 
-                : "Create your account"}
+            {show2FAChallenge
+              ? "Enter your verification code"
+              : showForgotPassword 
+                ? "Reset your password" 
+                : isLogin 
+                  ? "Welcome back!" 
+                  : "Create your account"}
           </p>
         </div>
 
         <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <User className="text-rose" size={20} />
+            {show2FAChallenge ? (
+              <Shield className="text-rose" size={20} />
+            ) : (
+              <User className="text-rose" size={20} />
+            )}
             <span className="font-medium text-foreground">
-              {showForgotPassword ? "Password Reset" : "User Account"}
+              {show2FAChallenge
+                ? "Two-Factor Authentication"
+                : showForgotPassword 
+                  ? "Password Reset" 
+                  : "User Account"}
             </span>
           </div>
 
-          {showForgotPassword ? (
+          {show2FAChallenge ? (
+            // 2FA Challenge Form
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                Enter the 6-digit code from your authenticator app.
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="totp-code" className="text-foreground">
+                  Verification Code
+                </Label>
+                <Input
+                  id="totp-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ""))}
+                  className="text-center text-lg tracking-widest bg-background/50 border-rose-light/30 focus:border-rose"
+                  autoFocus
+                />
+              </div>
+
+              <Button
+                variant="romantic"
+                size="lg"
+                className="w-full mt-6"
+                onClick={handleVerify2FA}
+                disabled={isVerifying2FA || totpCode.length !== 6}
+              >
+                {isVerifying2FA ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Verify & Sign In
+                  </>
+                )}
+              </Button>
+
+              <div className="text-center mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShow2FAChallenge(false);
+                    setTotpCode("");
+                    supabase.auth.signOut();
+                  }}
+                  className="text-sm text-muted-foreground hover:text-rose transition-colors"
+                >
+                  Use a different account
+                </button>
+              </div>
+            </div>
+          ) : showForgotPassword ? (
             // Forgot Password Form
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <p className="text-sm text-muted-foreground text-center mb-4">

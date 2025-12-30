@@ -23,6 +23,7 @@ import {
 import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle, Download, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { TwoFactorSetup } from "@/components/TwoFactorSetup";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
@@ -601,88 +602,97 @@ const Profile = () => {
             </TabsContent>
 
             <TabsContent value="security">
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <p className="text-sm text-muted-foreground mb-4">
-                  Change your password to keep your account secure.
-                </p>
+              <div className="space-y-8">
+                {/* Two-Factor Authentication */}
+                <TwoFactorSetup />
 
-                {/* Current Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword" className="text-foreground">
-                    Current Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <Input
-                      id="currentPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
-                      required
-                    />
-                  </div>
+                {/* Password Change Section */}
+                <div className="p-6 border border-border rounded-xl">
+                  <h4 className="font-semibold text-foreground mb-4">Change Password</h4>
+                  <form onSubmit={handleChangePassword} className="space-y-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Update your password to keep your account secure.
+                    </p>
+
+                    {/* Current Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword" className="text-foreground">
+                        Current Password
+                      </Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* New Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword" className="text-foreground">
+                        New Password
+                      </Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                          required
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Must be at least 6 characters
+                      </p>
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmNewPassword" className="text-foreground">
+                        Confirm New Password
+                      </Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                        <Input
+                          id="confirmNewPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="romantic"
+                      size="lg"
+                      className="w-full mt-6"
+                      disabled={isChangingPassword}
+                    >
+                      {isChangingPassword ? (
+                        "Changing Password..."
+                      ) : (
+                        <>
+                          <Lock className="mr-2 h-4 w-4" />
+                          Change Password
+                        </>
+                      )}
+                    </Button>
+                  </form>
                 </div>
-
-                {/* New Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="text-foreground">
-                    New Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Must be at least 6 characters
-                  </p>
-                </div>
-
-                {/* Confirm Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword" className="text-foreground">
-                    Confirm New Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <Input
-                      id="confirmNewPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="romantic"
-                  size="lg"
-                  className="w-full mt-6"
-                  disabled={isChangingPassword}
-                >
-                  {isChangingPassword ? (
-                    "Changing Password..."
-                  ) : (
-                    <>
-                      <Lock className="mr-2 h-4 w-4" />
-                      Change Password
-                    </>
-                  )}
-                </Button>
-              </form>
+              </div>
             </TabsContent>
 
             <TabsContent value="notifications">
