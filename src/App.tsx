@@ -10,6 +10,7 @@ import CookieConsent from "@/components/CookieConsent";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminTeddyImages from "./pages/AdminTeddyImages";
 import AdminLoveMessages from "./pages/AdminLoveMessages";
@@ -36,6 +37,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/images" element={<AdminTeddyImages />} />
               <Route path="/admin/messages" element={<AdminLoveMessages />} />

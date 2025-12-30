@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw } from "lucide-react";
+import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,6 +108,11 @@ const Index = () => {
                     </Button>
                   </Link>
                 )}
+                <Link to="/settings">
+                  <Button variant="ghost" size="sm">
+                    <Settings size={16} />
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="sm" onClick={handleSignOut}>
                   <LogOut size={16} />
                 </Button>
