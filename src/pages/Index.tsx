@@ -152,8 +152,8 @@ const Index = () => {
             ) : (
               <Link to="/auth">
                 <Button variant="soft" size="sm">
-                  <Shield size={16} className="mr-1" />
-                  Admin Login
+                  <User size={16} className="mr-1" />
+                  Login
                 </Button>
               </Link>
             )}
