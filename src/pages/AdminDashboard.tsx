@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift } from "lucide-react";
 import { useSecurityLog } from "@/hooks/useSecurityLog";
 
 const AdminDashboard = () => {
@@ -164,6 +164,22 @@ const AdminDashboard = () => {
               </p>
               <Button variant="outline" size="sm" className="w-full border-green-500/30 text-green-600 hover:bg-green-500/10">
                 View Stats
+              </Button>
+            </div>
+          </Link>
+
+          {/* Donation Analytics */}
+          <Link to="/admin/donations" className="block">
+            <div className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 backdrop-blur-sm rounded-2xl p-6 border border-amber-500/30 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-4">
+                <Gift className="text-amber-600" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Donation Analytics</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Track donation engagement and copy clicks.
+              </p>
+              <Button variant="outline" size="sm" className="w-full border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
+                View Donations
               </Button>
             </div>
           </Link>

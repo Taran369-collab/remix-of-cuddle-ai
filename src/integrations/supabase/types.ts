@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      donation_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          payment_method: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          payment_method: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          payment_method?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       love_messages: {
         Row: {
           created_at: string
