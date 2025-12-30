@@ -1,13 +1,30 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Sparkles, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye } from "lucide-react";
+import { useSecurityLog } from "@/hooks/useSecurityLog";
 
 const AdminDashboard = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { logSecurityEvent } = useSecurityLog();
+  const hasLoggedRef = useRef(false);
+
+  useEffect(() => {
+    if (isLoading || hasLoggedRef.current) return;
+    
+    hasLoggedRef.current = true;
+    
+    if (isAdmin) {
+      logSecurityEvent('admin_access_granted', true, { page: 'dashboard' });
+    } else {
+      logSecurityEvent('admin_access_denied', false, { page: 'dashboard' });
+    }
+  }, [isAdmin, isLoading, logSecurityEvent]);
 
   const handleSignOut = async () => {
+    logSecurityEvent('sign_out', true);
     await signOut();
     navigate("/");
   };

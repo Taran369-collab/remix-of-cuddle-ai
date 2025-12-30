@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { format, subDays, startOfDay, endOfDay, isWithinInterval } from "date-fn
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useSecurityLog } from "@/hooks/useSecurityLog";
 
 interface PageView {
   id: string;
@@ -29,16 +30,25 @@ interface DailyViews {
 const AdminViewers = () => {
   const { isAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { logSecurityEvent } = useSecurityLog();
+  const hasLoggedRef = useRef(false);
   const [pageViews, setPageViews] = useState<PageView[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState<Date>(subDays(new Date(), 30));
   const [dateTo, setDateTo] = useState<Date>(new Date());
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
+    if (authLoading || hasLoggedRef.current) return;
+    
+    hasLoggedRef.current = true;
+    
+    if (isAdmin) {
+      logSecurityEvent('admin_access_granted', true, { page: 'viewers' });
+    } else {
+      logSecurityEvent('admin_access_denied', false, { page: 'viewers' });
       navigate("/admin");
     }
-  }, [isAdmin, authLoading, navigate]);
+  }, [isAdmin, authLoading, navigate, logSecurityEvent]);
 
   useEffect(() => {
     const fetchPageViews = async () => {
