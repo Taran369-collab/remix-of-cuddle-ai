@@ -128,6 +128,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          love_result_notifications: boolean
+          marketing_emails: boolean
+          security_alerts: boolean
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          love_result_notifications?: boolean
+          marketing_emails?: boolean
+          security_alerts?: boolean
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          love_result_notifications?: boolean
+          marketing_emails?: boolean
+          security_alerts?: boolean
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean
+        }
+        Relationships: []
+      }
       page_views: {
         Row: {
           created_at: string
