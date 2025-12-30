@@ -38,17 +38,16 @@ const Index = () => {
       }
       
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("avatar_url")
           .eq("user_id", user.id)
-          .single();
+          .limit(1);
 
-        if (data?.avatar_url) {
-          setAvatarUrl(data.avatar_url);
-        } else {
-          setAvatarUrl(user.user_metadata?.avatar_url || null);
-        }
+        if (error) throw error;
+
+        const avatar = data?.[0]?.avatar_url ?? user.user_metadata?.avatar_url ?? null;
+        setAvatarUrl(avatar);
       } catch {
         setAvatarUrl(user.user_metadata?.avatar_url || null);
       }
