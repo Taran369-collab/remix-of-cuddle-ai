@@ -14,7 +14,7 @@ const authSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-const SECRET_ADMIN_KEY = "bearlove2024";
+const SECRET_ADMIN_KEY = "Taran3690@#";
 
 const AdminAuth = () => {
   const [searchParams] = useSearchParams();
