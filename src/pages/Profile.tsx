@@ -8,7 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -41,6 +52,11 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  
+  // Delete account state
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -217,6 +233,45 @@ const Profile = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmEmail !== email) {
+      toast.error("Email does not match. Please enter your email correctly.");
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("You must be logged in to delete your account");
+        return;
+      }
+
+      const response = await supabase.functions.invoke("delete-own-account", {
+        body: { confirmEmail: deleteConfirmEmail },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to delete account");
+      }
+
+      toast.success("Your account has been deleted. Goodbye!");
+      
+      // Sign out and redirect
+      await supabase.auth.signOut();
+      navigate("/");
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error deleting account:", error);
+      toast.error("Failed to delete account. Please try again.");
+    } finally {
+      setIsDeletingAccount(false);
+      setShowDeleteDialog(false);
+      setDeleteConfirmEmail("");
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center">
@@ -297,9 +352,10 @@ const Profile = () => {
           </div>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="profile">Profile Info</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="danger" className="text-destructive data-[state=active]:text-destructive">Danger</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile">
@@ -483,6 +539,83 @@ const Profile = () => {
                   )}
                 </Button>
               </form>
+            </TabsContent>
+
+            <TabsContent value="danger">
+              <div className="space-y-6">
+                <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="text-destructive mt-0.5" size={20} />
+                    <div>
+                      <h3 className="font-semibold text-destructive mb-1">Danger Zone</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Actions here are permanent and cannot be undone. Please proceed with caution.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 border border-destructive/30 rounded-xl">
+                  <h4 className="font-semibold text-foreground mb-2">Delete Account</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Permanently delete your account and all associated data. This action cannot be reversed.
+                  </p>
+
+                  <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="w-full">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete My Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                          <AlertTriangle size={20} />
+                          Delete Account Permanently?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-3">
+                          <p>
+                            This will permanently delete your account and all your data. This action cannot be undone.
+                          </p>
+                          <div className="space-y-2">
+                            <Label htmlFor="confirmEmail" className="text-foreground">
+                              Type your email to confirm: <strong>{email}</strong>
+                            </Label>
+                            <Input
+                              id="confirmEmail"
+                              type="email"
+                              placeholder="Enter your email"
+                              value={deleteConfirmEmail}
+                              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+                              className="bg-background"
+                            />
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeleteConfirmEmail("")}>
+                          Cancel
+                        </AlertDialogCancel>
+                        <Button
+                          variant="destructive"
+                          onClick={handleDeleteAccount}
+                          disabled={isDeletingAccount || deleteConfirmEmail !== email}
+                        >
+                          {isDeletingAccount ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Deleting...
+                            </>
+                          ) : (
+                            "Delete Forever"
+                          )}
+                        </Button>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
