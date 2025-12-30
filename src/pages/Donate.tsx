@@ -5,6 +5,7 @@ import { Heart, ArrowLeft, Bitcoin, IndianRupee, Copy, Check, Sparkles, Gift } f
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useDonationTracking } from "@/hooks/useDonationTracking";
+import DonationGoalProgress from "@/components/DonationGoalProgress";
 
 const PAYMENT_OPTIONS = {
   UPI: "ramansasan6@oksbi",
@@ -83,6 +84,11 @@ const Donate = () => {
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               Your generous donation helps us keep Bear Love running and spreading joy to couples around the world. Every contribution, big or small, makes a difference!
             </p>
+          </div>
+
+          {/* Donation Goal Progress */}
+          <div className="mb-8">
+            <DonationGoalProgress />
           </div>
 
           {/* Thank You Message */}

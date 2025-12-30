@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target } from "lucide-react";
 import { useSecurityLog } from "@/hooks/useSecurityLog";
 
 const AdminDashboard = () => {
@@ -180,6 +180,22 @@ const AdminDashboard = () => {
               </p>
               <Button variant="outline" size="sm" className="w-full border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
                 View Donations
+              </Button>
+            </div>
+          </Link>
+
+          {/* Donation Goals */}
+          <Link to="/admin/donation-goals" className="block">
+            <div className="bg-gradient-to-br from-rose/10 to-love-light/10 backdrop-blur-sm rounded-2xl p-6 border border-rose/30 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-rose/20 flex items-center justify-center mb-4">
+                <Target className="text-rose" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Donation Goals</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create and manage fundraising goals.
+              </p>
+              <Button variant="romantic" size="sm" className="w-full">
+                Manage Goals
               </Button>
             </div>
           </Link>
