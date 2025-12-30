@@ -5,20 +5,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 const Profile = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Profile state
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [bio, setBio] = useState("");
+  const [phone, setPhone] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [joinedDate, setJoinedDate] = useState<string>("");
+  
+  // Password state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -29,6 +51,8 @@ const Profile = () => {
     if (user) {
       setDisplayName(user.user_metadata?.full_name || "");
       setEmail(user.email || "");
+      setBio(user.user_metadata?.bio || "");
+      setPhone(user.user_metadata?.phone || "");
       setJoinedDate(
         new Date(user.created_at).toLocaleDateString("en-US", {
           year: "numeric",
@@ -67,13 +91,11 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload an image file");
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error("Image must be less than 2MB");
       return;
@@ -82,26 +104,21 @@ const Profile = () => {
     setIsUploadingAvatar(true);
 
     try {
-      // Create unique file path
       const fileExt = file.name.split(".").pop();
       const filePath = `${user.id}/avatar.${fileExt}`;
 
-      // Upload to storage
       const { error: uploadError } = await supabase.storage
         .from("avatars")
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Add cache-busting query param
       const avatarUrlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
 
-      // Update profile in database (create row if it doesn't exist)
       const { data: updatedRows, error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrlWithTimestamp })
@@ -127,7 +144,6 @@ const Profile = () => {
       toast.error("Failed to upload avatar");
     } finally {
       setIsUploadingAvatar(false);
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -141,7 +157,11 @@ const Profile = () => {
     setIsUpdating(true);
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { full_name: displayName },
+        data: { 
+          full_name: displayName,
+          bio: bio,
+          phone: phone,
+        },
       });
 
       if (error) throw error;
@@ -151,6 +171,49 @@ const Profile = () => {
       toast.error("Failed to update profile");
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const result = passwordSchema.safeParse({ currentPassword, newPassword, confirmPassword });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      // First verify current password by signing in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Current password is incorrect");
+        setIsChangingPassword(false);
+        return;
+      }
+
+      // Update password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success("Password changed successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error changing password:", error);
+      toast.error("Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -165,8 +228,7 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center p-4">
-      {/* Back button */}
+    <div className="min-h-screen bg-gradient-dreamy py-8 px-4">
       <Button
         variant="ghost"
         className="absolute top-4 left-4 text-muted-foreground hover:text-foreground"
@@ -176,7 +238,7 @@ const Profile = () => {
         Back to Home
       </Button>
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl mx-auto mt-12">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
@@ -192,7 +254,7 @@ const Profile = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30">
+        <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-6 md:p-8 shadow-card border border-rose-light/30">
           {/* Avatar Section */}
           <div className="flex flex-col items-center mb-8">
             <div className="relative group">
@@ -203,7 +265,6 @@ const Profile = () => {
                 </AvatarFallback>
               </Avatar>
               
-              {/* Upload overlay */}
               <button
                 type="button"
                 onClick={handleAvatarClick}
@@ -217,7 +278,6 @@ const Profile = () => {
                 )}
               </button>
               
-              {/* Hidden file input */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -228,7 +288,7 @@ const Profile = () => {
             </div>
             
             <p className="text-xs text-muted-foreground mb-2">
-              Click to upload a new photo
+              Click to upload a new photo (max 2MB)
             </p>
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <Calendar size={14} />
@@ -236,62 +296,195 @@ const Profile = () => {
             </p>
           </div>
 
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            {/* Display Name */}
-            <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-foreground">
-                Display Name
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="Your name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
-                />
-              </div>
-            </div>
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="profile">Profile Info</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+            </TabsList>
 
-            {/* Email (Read Only) */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  disabled
-                  className="pl-10 bg-background/30 border-rose-light/30 cursor-not-allowed opacity-70"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed
-              </p>
-            </div>
+            <TabsContent value="profile">
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                {/* Display Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="displayName" className="text-foreground">
+                    Display Name
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="displayName"
+                      type="text"
+                      placeholder="Your name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                    />
+                  </div>
+                </div>
 
-            <Button
-              type="submit"
-              variant="romantic"
-              size="lg"
-              className="w-full mt-6"
-              disabled={isUpdating}
-            >
-              {isUpdating ? (
-                "Saving..."
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </form>
+                {/* Email (Read Only) */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      disabled
+                      className="pl-10 bg-background/30 border-rose-light/30 cursor-not-allowed opacity-70"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Email cannot be changed
+                  </p>
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-foreground">
+                    Phone Number
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+1 234 567 8900"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                    />
+                  </div>
+                </div>
+
+                {/* Bio */}
+                <div className="space-y-2">
+                  <Label htmlFor="bio" className="text-foreground">
+                    Bio
+                  </Label>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-3 text-muted-foreground" size={18} />
+                    <Textarea
+                      id="bio"
+                      placeholder="Tell us a little about yourself..."
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose min-h-[100px] resize-none"
+                      maxLength={200}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground text-right">
+                    {bio.length}/200 characters
+                  </p>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="romantic"
+                  size="lg"
+                  className="w-full mt-6"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    "Saving..."
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="security">
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Change your password to keep your account secure.
+                </p>
+
+                {/* Current Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword" className="text-foreground">
+                    Current Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="text-foreground">
+                    New Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Must be at least 6 characters
+                  </p>
+                </div>
+
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmNewPassword" className="text-foreground">
+                    Confirm New Password
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                    <Input
+                      id="confirmNewPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10 bg-background/50 border-rose-light/30 focus:border-rose"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="romantic"
+                  size="lg"
+                  className="w-full mt-6"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? (
+                    "Changing Password..."
+                  ) : (
+                    <>
+                      <Lock className="mr-2 h-4 w-4" />
+                      Change Password
+                    </>
+                  )}
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
