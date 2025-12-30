@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Heart, Sparkles, Lock, Mail, ArrowLeft, User } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,9 +19,19 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user, signIn, signUp, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   // Redirect authenticated users to home
   useEffect(() => {
@@ -66,6 +77,12 @@ const Auth = () => {
             toast.error(error.message);
           }
         } else {
+          // Save or remove email based on remember me
+          if (rememberMe) {
+            localStorage.setItem("rememberedEmail", email);
+          } else {
+            localStorage.removeItem("rememberedEmail");
+          }
           toast.success("Welcome back!");
           navigate("/");
         }
@@ -152,6 +169,22 @@ const Auth = () => {
                 />
               </div>
             </div>
+
+            {isLogin && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                <Label
+                  htmlFor="remember"
+                  className="text-sm text-muted-foreground cursor-pointer"
+                >
+                  Remember me
+                </Label>
+              </div>
+            )}
 
             <Button
               type="submit"
