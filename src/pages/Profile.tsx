@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle, Download } from "lucide-react";
+import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle, Download, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -31,6 +32,14 @@ const passwordSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
+
+interface NotificationPreferences {
+  marketing_emails: boolean;
+  love_result_notifications: boolean;
+  weekly_digest: boolean;
+  security_alerts: boolean;
+}
+
 
 const Profile = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -60,6 +69,16 @@ const Profile = () => {
   
   // Export data state
   const [isExportingData, setIsExportingData] = useState(false);
+  
+  // Notification preferences state
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({
+    marketing_emails: true,
+    love_result_notifications: true,
+    weekly_digest: false,
+    security_alerts: true,
+  });
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -80,6 +99,7 @@ const Profile = () => {
         })
       );
       fetchProfile();
+      fetchNotificationPreferences();
     }
   }, [user, authLoading, navigate]);
 
@@ -99,6 +119,80 @@ const Profile = () => {
       setAvatarUrl(avatar);
     } catch (error) {
       if (import.meta.env.DEV) console.error("Error fetching profile:", error);
+    }
+  };
+
+  const fetchNotificationPreferences = async () => {
+    if (!user) return;
+    
+    setIsLoadingNotifications(true);
+    try {
+      const { data, error } = await supabase
+        .from("notification_preferences")
+        .select("*")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setNotificationPrefs({
+          marketing_emails: data[0].marketing_emails,
+          love_result_notifications: data[0].love_result_notifications,
+          weekly_digest: data[0].weekly_digest,
+          security_alerts: data[0].security_alerts,
+        });
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error fetching notification preferences:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  const saveNotificationPreferences = async () => {
+    if (!user) return;
+    
+    setIsSavingNotifications(true);
+    try {
+      const { data: existing } = await supabase
+        .from("notification_preferences")
+        .select("id")
+        .eq("user_id", user.id)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        const { error } = await supabase
+          .from("notification_preferences")
+          .update({
+            marketing_emails: notificationPrefs.marketing_emails,
+            love_result_notifications: notificationPrefs.love_result_notifications,
+            weekly_digest: notificationPrefs.weekly_digest,
+            security_alerts: notificationPrefs.security_alerts,
+          })
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("notification_preferences")
+          .insert({
+            user_id: user.id,
+            marketing_emails: notificationPrefs.marketing_emails,
+            love_result_notifications: notificationPrefs.love_result_notifications,
+            weekly_digest: notificationPrefs.weekly_digest,
+            security_alerts: notificationPrefs.security_alerts,
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success("Notification preferences saved!");
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error saving notification preferences:", error);
+      toast.error("Failed to save notification preferences");
+    } finally {
+      setIsSavingNotifications(false);
     }
   };
 
@@ -401,8 +495,9 @@ const Profile = () => {
           </div>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="notifications">Notifications</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
               <TabsTrigger value="danger" className="text-destructive data-[state=active]:text-destructive">Danger</TabsTrigger>
             </TabsList>
@@ -588,6 +683,120 @@ const Profile = () => {
                   )}
                 </Button>
               </form>
+            </TabsContent>
+
+            <TabsContent value="notifications">
+              <div className="space-y-6">
+                <div className="flex items-start gap-3 mb-4">
+                  <Bell className="text-rose mt-0.5" size={20} />
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-1">Email Preferences</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Choose which emails you'd like to receive from us.
+                    </p>
+                  </div>
+                </div>
+
+                {isLoadingNotifications ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="marketing" className="text-foreground font-medium">
+                          Marketing Emails
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive updates about new features and promotions.
+                        </p>
+                      </div>
+                      <Switch
+                        id="marketing"
+                        checked={notificationPrefs.marketing_emails}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({ ...prev, marketing_emails: checked }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="loveResults" className="text-foreground font-medium">
+                          Love Result Notifications
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Get notified when you receive new love compatibility results.
+                        </p>
+                      </div>
+                      <Switch
+                        id="loveResults"
+                        checked={notificationPrefs.love_result_notifications}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({ ...prev, love_result_notifications: checked }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="weeklyDigest" className="text-foreground font-medium">
+                          Weekly Digest
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receive a weekly summary of your activity and love tips.
+                        </p>
+                      </div>
+                      <Switch
+                        id="weeklyDigest"
+                        checked={notificationPrefs.weekly_digest}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({ ...prev, weekly_digest: checked }))
+                        }
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-border rounded-xl">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="securityAlerts" className="text-foreground font-medium">
+                          Security Alerts
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Important notifications about your account security.
+                        </p>
+                      </div>
+                      <Switch
+                        id="securityAlerts"
+                        checked={notificationPrefs.security_alerts}
+                        onCheckedChange={(checked) =>
+                          setNotificationPrefs((prev) => ({ ...prev, security_alerts: checked }))
+                        }
+                      />
+                    </div>
+
+                    <Button
+                      variant="romantic"
+                      size="lg"
+                      className="w-full mt-6"
+                      onClick={saveNotificationPreferences}
+                      disabled={isSavingNotifications}
+                    >
+                      {isSavingNotifications ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Save Preferences
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="danger">
