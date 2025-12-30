@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Sparkles, Star, Shield, LogOut, User } from "lucide-react";
+import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -222,7 +222,7 @@ const Index = () => {
               <Heart className="text-rose animate-heartbeat fill-current" size={16} />
               <span className="font-body text-sm">for couples everywhere</span>
             </div>
-            <div className="flex items-center justify-center gap-4 text-sm">
+            <div className="flex items-center justify-center gap-4 text-sm mb-4">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
@@ -231,6 +231,18 @@ const Index = () => {
                 Terms of Service
               </Link>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw size={14} className="mr-1" />
+              Reset App
+            </Button>
           </footer>
         </div>
       </div>
