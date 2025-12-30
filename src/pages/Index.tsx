@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw, Settings } from "lucide-react";
+import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw, Settings, Gift } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -212,9 +212,17 @@ const Index = () => {
             ))}
           </div>
 
-          {/* Crypto Donation Section */}
+          {/* Donation Section */}
           <div className="max-w-md mx-auto mt-12">
             <CryptoDonation />
+            <div className="text-center mt-4">
+              <Link to="/donate">
+                <Button variant="romantic" size="sm">
+                  <Gift size={16} className="mr-2" />
+                  View All Donation Options
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Bottom Banner Ad */}
