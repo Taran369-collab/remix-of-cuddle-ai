@@ -104,7 +104,7 @@ const Settings = () => {
         description: "Your data has been downloaded successfully",
       });
     } catch (error) {
-      console.error("Export error:", error);
+      if (import.meta.env.DEV) console.error("Export error:", error);
       toast({
         title: "Export failed",
         description: "Failed to export your data. Please try again.",
@@ -146,7 +146,7 @@ const Settings = () => {
 
       navigate("/");
     } catch (error) {
-      console.error("Delete error:", error);
+      if (import.meta.env.DEV) console.error("Delete error:", error);
       toast({
         title: "Delete failed",
         description: "Failed to delete your account. Please try again.",
@@ -167,6 +167,7 @@ const Settings = () => {
       <Helmet>
         <title>Settings | Bear Love</title>
         <meta name="description" content="Manage your Bear Love preferences and account settings" />
+        <link rel="canonical" href={`${window.location.origin}/#/settings`} />
       </Helmet>
       
       <div className="min-h-screen bg-gradient-to-br from-rose-light/30 via-background to-love-light/20">

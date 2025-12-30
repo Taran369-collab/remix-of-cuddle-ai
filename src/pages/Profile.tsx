@@ -48,18 +48,12 @@ const Profile = () => {
         .from("profiles")
         .select("avatar_url")
         .eq("user_id", user.id)
-        .single();
+        .limit(1);
 
-      if (error && error.code !== "PGRST116") {
-        if (import.meta.env.DEV) console.error("Error fetching profile:", error);
-        return;
-      }
+      if (error) throw error;
 
-      if (data?.avatar_url) {
-        setAvatarUrl(data.avatar_url);
-      } else if (user.user_metadata?.avatar_url) {
-        setAvatarUrl(user.user_metadata.avatar_url);
-      }
+      const avatar = data?.[0]?.avatar_url ?? user.user_metadata?.avatar_url ?? null;
+      setAvatarUrl(avatar);
     } catch (error) {
       if (import.meta.env.DEV) console.error("Error fetching profile:", error);
     }
@@ -107,13 +101,24 @@ const Profile = () => {
       // Add cache-busting query param
       const avatarUrlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
 
-      // Update profile in database
-      const { error: updateError } = await supabase
+      // Update profile in database (create row if it doesn't exist)
+      const { data: updatedRows, error: updateError } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrlWithTimestamp })
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .select("user_id");
 
       if (updateError) throw updateError;
+
+      if (!updatedRows || updatedRows.length === 0) {
+        const { error: insertError } = await supabase.from("profiles").insert({
+          user_id: user.id,
+          email: user.email ?? null,
+          avatar_url: avatarUrlWithTimestamp,
+        });
+
+        if (insertError) throw insertError;
+      }
 
       setAvatarUrl(avatarUrlWithTimestamp);
       toast.success("Avatar updated successfully!");
