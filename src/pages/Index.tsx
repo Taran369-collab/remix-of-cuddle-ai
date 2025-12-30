@@ -9,6 +9,7 @@ import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
 import LoveMeter from "@/components/LoveMeter";
 import AdPlacement from "@/components/AdPlacement";
+import CryptoDonation from "@/components/CryptoDonation";
 import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
@@ -209,6 +210,11 @@ const Index = () => {
                 <p className="font-body text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* Crypto Donation Section */}
+          <div className="max-w-md mx-auto mt-12">
+            <CryptoDonation />
           </div>
 
           {/* Bottom Banner Ad */}
