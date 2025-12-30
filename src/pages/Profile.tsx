@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle } from "lucide-react";
+import { Heart, Sparkles, ArrowLeft, User, Mail, Calendar, Save, Camera, Loader2, Lock, Phone, FileText, Trash2, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -57,6 +57,9 @@ const Profile = () => {
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  // Export data state
+  const [isExportingData, setIsExportingData] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -230,6 +233,52 @@ const Profile = () => {
       toast.error("Failed to change password");
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    
+    setIsExportingData(true);
+    
+    try {
+      // Fetch all user data from various tables
+      const [profileResult, loveResultsResult] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", user.id),
+        supabase.from("love_results").select("*").eq("user_id", user.id),
+      ]);
+      
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: {
+          id: user.id,
+          email: user.email,
+          createdAt: user.created_at,
+          displayName: user.user_metadata?.full_name || null,
+          bio: user.user_metadata?.bio || null,
+          phone: user.user_metadata?.phone || null,
+        },
+        profile: profileResult.data || [],
+        loveResults: loveResultsResult.data || [],
+      };
+      
+      // Create and download the JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `bear-love-data-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Your data has been exported successfully!");
+    } catch (error) {
+      if (import.meta.env.DEV) console.error("Error exporting data:", error);
+      toast.error("Failed to export data. Please try again.");
+    } finally {
+      setIsExportingData(false);
     }
   };
 
@@ -553,6 +602,32 @@ const Profile = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Export Data Section */}
+                <div className="p-6 border border-border rounded-xl">
+                  <h4 className="font-semibold text-foreground mb-2">Export Your Data</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Download a copy of all your data including your profile, love results, and account information.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleExportData}
+                    disabled={isExportingData}
+                  >
+                    {isExportingData ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Exporting...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-4 w-4" />
+                        Download My Data
+                      </>
+                    )}
+                  </Button>
                 </div>
 
                 <div className="p-6 border border-destructive/30 rounded-xl">
