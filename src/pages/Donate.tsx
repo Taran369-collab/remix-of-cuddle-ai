@@ -1,9 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart, ArrowLeft, Bitcoin, IndianRupee, Copy, Check, Sparkles, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useDonationTracking } from "@/hooks/useDonationTracking";
 
 const PAYMENT_OPTIONS = {
   UPI: "ramansasan6@oksbi",
@@ -14,11 +15,18 @@ const PAYMENT_OPTIONS = {
 const Donate = () => {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const [showThankYou, setShowThankYou] = useState(false);
+  const { trackCopyAddress, trackPageView } = useDonationTracking();
 
-  const copyToClipboard = async (address: string, type: string) => {
+  useEffect(() => {
+    // Track page view for each payment method
+    trackPageView('UPI');
+  }, []);
+
+  const copyToClipboard = async (address: string, type: "UPI" | "BTC" | "ETH") => {
     try {
       await navigator.clipboard.writeText(address);
       setCopiedAddress(type);
+      trackCopyAddress(type);
       toast.success(`${type} address copied!`);
       setShowThankYou(true);
       setTimeout(() => setCopiedAddress(null), 2000);
