@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Bitcoin, Copy, Check, Heart } from "lucide-react";
+import { Bitcoin, Copy, Check, Heart, IndianRupee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 const WALLET_ADDRESSES = {
   BTC: "bc1q3h3z9gg5q0u86vayjjdjm598djzx540czn9qr7",
   ETH: "0x9EF8145CF17D5e92BE4c7777a54869b4287E3AA5",
+  UPI: "ramansasan6@oksbi",
 };
 
 const CryptoDonation = () => {
@@ -22,7 +23,10 @@ const CryptoDonation = () => {
     }
   };
 
-  const generateQRUrl = (address: string, type: "BTC" | "ETH") => {
+  const generateQRUrl = (address: string, type: "BTC" | "ETH" | "UPI") => {
+    if (type === "UPI") {
+      return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=${address}&pn=BearLove&cu=INR`)}&bgcolor=fff5f7&color=e11d48`;
+    }
     const prefix = type === "BTC" ? "bitcoin:" : "ethereum:";
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(prefix + address)}&bgcolor=fff5f7&color=e11d48`;
   };
@@ -35,8 +39,50 @@ const CryptoDonation = () => {
       </div>
 
       <p className="text-center text-muted-foreground text-sm mb-6">
-        Help us keep spreading love! Donate crypto to support development.
+        Help us keep spreading love! Donate to support development.
       </p>
+
+      {/* UPI Donation - Featured */}
+      <div className="flex flex-col items-center p-4 bg-gradient-to-br from-orange-500/10 to-green-500/10 rounded-xl border border-orange-500/20 mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <IndianRupee className="text-orange-600" size={20} />
+          <span className="font-semibold text-foreground">UPI (India)</span>
+        </div>
+        
+        <img
+          src={generateQRUrl(WALLET_ADDRESSES.UPI, "UPI")}
+          alt="UPI QR Code"
+          className="w-32 h-32 rounded-lg mb-3 bg-white p-1"
+        />
+        
+        <p className="text-sm text-muted-foreground mb-2 text-center">
+          Donate ₹1 - ₹9 to show your love!
+        </p>
+        
+        <div className="w-full max-w-xs">
+          <p className="text-xs text-muted-foreground mb-2 text-center font-mono">
+            {WALLET_ADDRESSES.UPI}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full border-orange-500/30 text-orange-600 hover:bg-orange-500/10"
+            onClick={() => copyToClipboard(WALLET_ADDRESSES.UPI, "UPI")}
+          >
+            {copiedAddress === "UPI" ? (
+              <>
+                <Check size={14} className="mr-1" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy size={14} className="mr-1" />
+                Copy UPI ID
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* BTC Donation */}
