@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Bitcoin, Copy, Check, Heart, IndianRupee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import DonationGoalProgress from "@/components/DonationGoalProgress";
 
 const WALLET_ADDRESSES = {
   BTC: "bc1q3h3z9gg5q0u86vayjjdjm598djzx540czn9qr7",
@@ -38,9 +39,14 @@ const CryptoDonation = () => {
         <h3 className="font-display text-xl text-foreground">Support Bear Love</h3>
       </div>
 
-      <p className="text-center text-muted-foreground text-sm mb-6">
+      <p className="text-center text-muted-foreground text-sm mb-4">
         Help us keep spreading love! Donate to support development.
       </p>
+
+      {/* Compact Goal Progress */}
+      <div className="mb-4">
+        <DonationGoalProgress compact />
+      </div>
 
       {/* UPI Donation - Featured */}
       <div className="flex flex-col items-center p-4 bg-gradient-to-br from-orange-500/10 to-green-500/10 rounded-xl border border-orange-500/20 mb-4">

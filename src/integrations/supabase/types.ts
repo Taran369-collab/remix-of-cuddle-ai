@@ -38,6 +38,39 @@ export type Database = {
         }
         Relationships: []
       }
+      donation_goals: {
+        Row: {
+          created_at: string
+          currency: string
+          current_amount: number
+          goal_name: string
+          id: string
+          is_active: boolean
+          target_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          current_amount?: number
+          goal_name: string
+          id?: string
+          is_active?: boolean
+          target_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          current_amount?: number
+          goal_name?: string
+          id?: string
+          is_active?: boolean
+          target_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       love_messages: {
         Row: {
           created_at: string
