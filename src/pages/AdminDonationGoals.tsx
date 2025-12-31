@@ -12,6 +12,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
+import { z } from "zod";
+
+// Validation schema for donation goals
+const goalSchema = z.object({
+  goal_name: z.string().trim().min(1, "Goal name is required").max(100, "Goal name must be less than 100 characters"),
+  target_amount: z.number().positive("Target amount must be positive").max(999999999, "Amount too large"),
+  current_amount: z.number().min(0, "Current amount cannot be negative").max(999999999, "Amount too large").optional(),
+  currency: z.enum(["INR", "BTC", "ETH"], { message: "Invalid currency" }),
+});
 
 interface DonationGoal {
   id: string;
@@ -57,15 +66,25 @@ const AdminDonationGoals = () => {
   };
 
   const handleCreate = async () => {
-    if (!newGoal.goal_name || newGoal.target_amount <= 0) {
-      toast({ title: "Invalid input", description: "Please fill all fields correctly", variant: "destructive" });
-      return;
-    }
-
-    const { error } = await supabase.from("donation_goals").insert({
+    // Validate input with Zod schema
+    const validationResult = goalSchema.safeParse({
       goal_name: newGoal.goal_name,
       target_amount: newGoal.target_amount,
       currency: newGoal.currency,
+    });
+
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors[0]?.message || "Invalid input";
+      toast({ title: "Validation Error", description: errorMessage, variant: "destructive" });
+      return;
+    }
+
+    const validatedData = validationResult.data;
+
+    const { error } = await supabase.from("donation_goals").insert({
+      goal_name: validatedData.goal_name,
+      target_amount: validatedData.target_amount,
+      currency: validatedData.currency,
     });
 
     if (error) {
@@ -79,13 +98,31 @@ const AdminDonationGoals = () => {
   };
 
   const handleUpdate = async (id: string) => {
+    // Validate input with Zod schema
+    const validationResult = goalSchema.extend({
+      current_amount: z.number().min(0, "Current amount cannot be negative").max(999999999, "Amount too large"),
+    }).safeParse({
+      goal_name: editForm.goal_name,
+      target_amount: editForm.target_amount,
+      current_amount: editForm.current_amount,
+      currency: editForm.currency,
+    });
+
+    if (!validationResult.success) {
+      const errorMessage = validationResult.error.errors[0]?.message || "Invalid input";
+      toast({ title: "Validation Error", description: errorMessage, variant: "destructive" });
+      return;
+    }
+
+    const validatedData = validationResult.data;
+
     const { error } = await supabase
       .from("donation_goals")
       .update({
-        goal_name: editForm.goal_name,
-        target_amount: editForm.target_amount,
-        current_amount: editForm.current_amount,
-        currency: editForm.currency,
+        goal_name: validatedData.goal_name,
+        target_amount: validatedData.target_amount,
+        current_amount: validatedData.current_amount,
+        currency: validatedData.currency,
       })
       .eq("id", id);
 
