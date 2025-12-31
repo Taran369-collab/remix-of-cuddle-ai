@@ -32,20 +32,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAdminRole = async (userId: string) => {
+  const checkAdminRole = async () => {
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .eq("role", "admin")
-        .maybeSingle();
-
+      // Use server-side Edge Function for admin verification
+      // This prevents client-side manipulation of admin status
+      const { data, error } = await supabase.functions.invoke('verify-admin');
+      
       if (error) {
         if (import.meta.env.DEV) console.error("Error checking admin role:", error);
         return false;
       }
-      return !!data;
+      
+      return data?.isAdmin === true;
     } catch (err) {
       if (import.meta.env.DEV) console.error("Error in checkAdminRole:", err);
       return false;
@@ -62,7 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Defer admin check with setTimeout to prevent deadlock
         if (session?.user) {
           setTimeout(() => {
-            checkAdminRole(session.user.id).then(setIsAdmin);
+            checkAdminRole().then(setIsAdmin);
           }, 0);
         } else {
           setIsAdmin(false);
@@ -76,7 +74,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminRole(session.user.id).then((admin) => {
+        checkAdminRole().then((admin) => {
           setIsAdmin(admin);
           setIsLoading(false);
         });
