@@ -1,27 +1,43 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target, Loader2 } from "lucide-react";
 import { useSecurityLog } from "@/hooks/useSecurityLog";
+import { useServerAdminCheck } from "@/hooks/useServerAdminCheck";
 
 const AdminDashboard = () => {
   const { user, signOut, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
   const { logSecurityEvent } = useSecurityLog();
+  const { verifyAdminStatus, isVerifying } = useServerAdminCheck();
   const hasLoggedRef = useRef(false);
+  const [serverVerified, setServerVerified] = useState<boolean | null>(null);
 
+  // Server-side admin verification on mount
   useEffect(() => {
-    if (isLoading || hasLoggedRef.current) return;
+    if (isLoading) return;
     
-    hasLoggedRef.current = true;
-    
-    if (isAdmin) {
-      logSecurityEvent('admin_access_granted', true, { page: 'dashboard' });
+    const verifyAdmin = async () => {
+      const result = await verifyAdminStatus();
+      setServerVerified(result.isAdmin);
+      
+      if (!hasLoggedRef.current) {
+        hasLoggedRef.current = true;
+        if (result.isAdmin) {
+          logSecurityEvent('admin_access_granted', true, { page: 'dashboard', serverVerified: true });
+        } else {
+          logSecurityEvent('admin_access_denied', false, { page: 'dashboard', serverVerified: false });
+        }
+      }
+    };
+
+    if (user) {
+      verifyAdmin();
     } else {
-      logSecurityEvent('admin_access_denied', false, { page: 'dashboard' });
+      setServerVerified(false);
     }
-  }, [isAdmin, isLoading, logSecurityEvent]);
+  }, [user, isLoading, verifyAdminStatus, logSecurityEvent]);
 
   const handleSignOut = async () => {
     logSecurityEvent('sign_out', true);
@@ -29,7 +45,23 @@ const AdminDashboard = () => {
     navigate("/");
   };
 
-  if (!isAdmin) {
+  // Show loading while verifying server-side
+  if (isLoading || isVerifying || serverVerified === null) {
+    return (
+      <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center p-4">
+        <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30 text-center max-w-md">
+          <Loader2 className="mx-auto text-rose mb-4 animate-spin" size={48} />
+          <h1 className="font-display text-2xl text-foreground mb-2">Verifying Access</h1>
+          <p className="text-muted-foreground">
+            Please wait while we verify your admin privileges...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Deny access if server verification failed
+  if (!serverVerified) {
     return (
       <div className="min-h-screen bg-gradient-dreamy flex items-center justify-center p-4">
         <div className="bg-card/80 backdrop-blur-sm rounded-3xl p-8 shadow-card border border-rose-light/30 text-center max-w-md">
