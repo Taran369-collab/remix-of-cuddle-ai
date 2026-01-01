@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target, Loader2 } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target, Loader2, ShieldCheck } from "lucide-react";
 import { useSecurityLog } from "@/hooks/useSecurityLog";
 import { useServerAdminCheck } from "@/hooks/useServerAdminCheck";
 
@@ -228,6 +228,22 @@ const AdminDashboard = () => {
               </p>
               <Button variant="romantic" size="sm" className="w-full">
                 Manage Goals
+              </Button>
+            </div>
+          </Link>
+
+          {/* Security Settings */}
+          <Link to="/admin/security" className="block">
+            <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/30 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4">
+                <ShieldCheck className="text-blue-600" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Security Settings</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                View security status and configurations.
+              </p>
+              <Button variant="outline" size="sm" className="w-full border-blue-500/30 text-blue-600 hover:bg-blue-500/10">
+                View Security
               </Button>
             </div>
           </Link>
