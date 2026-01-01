@@ -116,19 +116,14 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = async () => {
-    if (!user) return;
+    if (!user?.email) return;
 
     setIsDeleting(true);
     try {
-      // Delete user's love results
-      await supabase.from("love_results").delete().eq("user_id", user.id);
-      
-      // Delete user's profile
-      await supabase.from("profiles").delete().eq("user_id", user.id);
-
-      // Call edge function to delete auth user
-      const { error } = await supabase.functions.invoke("delete-user", {
-        body: { userId: user.id },
+      // Call the correct edge function for self-service account deletion
+      // This function handles profile, roles, and auth user deletion server-side
+      const { error } = await supabase.functions.invoke("delete-own-account", {
+        body: { confirmEmail: user.email },
       });
 
       if (error) throw error;
