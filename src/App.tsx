@@ -21,6 +21,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import AdminViewers from "./pages/AdminViewers";
 import AdminDonations from "./pages/AdminDonations";
 import AdminDonationGoals from "./pages/AdminDonationGoals";
+import AdminSecuritySettings from "./pages/AdminSecuritySettings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Donate from "./pages/Donate";
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/admin/viewers" element={<AdminViewers />} />
               <Route path="/admin/donations" element={<AdminDonations />} />
               <Route path="/admin/donation-goals" element={<AdminDonationGoals />} />
+              <Route path="/admin/security" element={<AdminSecuritySettings />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/donate" element={<Donate />} />
