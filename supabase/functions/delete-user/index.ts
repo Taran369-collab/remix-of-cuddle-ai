@@ -1,12 +1,33 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Dynamic CORS based on environment
+const getAllowedOrigin = (requestOrigin: string | null): string => {
+  const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [];
+  const defaultOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
+  
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return defaultOrigin;
 };
 
+const getCorsHeaders = (requestOrigin: string | null) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(requestOrigin),
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+});
+
+// Input validation schema
+const deleteUserSchema = z.object({
+  userId: z.string().uuid('Invalid user ID format'),
+});
+
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,6 +40,7 @@ serve(async (req) => {
     // Get the authorization header from the request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.log('No authorization header provided');
       return new Response(
         JSON.stringify({ error: "No authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -33,6 +55,7 @@ serve(async (req) => {
     // Get the current user
     const { data: { user: currentUser }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !currentUser) {
+      console.log('Failed to authenticate user:', userError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -50,21 +73,34 @@ serve(async (req) => {
       .maybeSingle();
 
     if (roleError || !adminRole) {
+      console.log('Admin check failed for user:', currentUser.id);
       return new Response(
         JSON.stringify({ error: "Admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get the user ID to delete from the request body
-    const { userId } = await req.json();
-    
-    if (!userId) {
+    // Parse and validate request body
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
       return new Response(
-        JSON.stringify({ error: "User ID is required" }),
+        JSON.stringify({ error: "Invalid JSON body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const validation = deleteUserSchema.safeParse(body);
+    if (!validation.success) {
+      console.log('Validation failed:', validation.error.errors);
+      return new Response(
+        JSON.stringify({ error: validation.error.errors[0].message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { userId } = validation.data;
 
     // Prevent self-deletion
     if (userId === currentUser.id) {
@@ -73,6 +109,8 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Admin ${currentUser.id} deleting user ${userId}`);
 
     // Delete the user using admin client
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);
@@ -85,6 +123,7 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Successfully deleted user ${userId}`);
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -1,11 +1,26 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Dynamic CORS based on environment
+const getAllowedOrigin = (requestOrigin: string | null): string => {
+  const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [];
+  const defaultOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
+  
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return defaultOrigin;
 };
 
+const getCorsHeaders = (requestOrigin: string | null) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(requestOrigin),
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+});
+
 Deno.serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,6 +31,7 @@ Deno.serve(async (req) => {
     
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.log('No authorization header provided');
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -33,6 +49,7 @@ Deno.serve(async (req) => {
     );
 
     if (userError || !user) {
+      console.log('Failed to authenticate user:', userError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -50,11 +67,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (roleError || !roleData) {
+      console.log('Admin check failed for user:', user.id);
       return new Response(
         JSON.stringify({ error: "Admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log(`Admin ${user.id} fetching users list`);
 
     // Fetch all auth users (admin only)
     const { data: { users }, error: usersError } = await adminClient.auth.admin.listUsers();
@@ -93,6 +113,7 @@ Deno.serve(async (req) => {
       is_admin: adminUserIds.has(profile.user_id),
     }));
 
+    console.log(`Returning ${usersWithEmails.length} users`);
     return new Response(
       JSON.stringify({ users: usersWithEmails }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
