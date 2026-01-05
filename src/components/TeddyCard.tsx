@@ -36,6 +36,9 @@ const TeddyCard = ({ imageSrc, pose, onGenerateNew, isGenerating }: TeddyCardPro
           <img
             src={imageSrc}
             alt={`Teddy bears ${pose}`}
+            width={438}
+            height={438}
+            fetchPriority="high"
             className={`w-full h-auto object-cover transition-transform duration-700 ${
               isHovered ? "scale-105" : "scale-100"
             }`}
