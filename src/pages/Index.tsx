@@ -10,6 +10,7 @@ import LoveMessage from "@/components/LoveMessage";
 import LoveMeter from "@/components/LoveMeter";
 import AdPlacement from "@/components/AdPlacement";
 import CryptoDonation from "@/components/CryptoDonation";
+import AILoveMessageGenerator from "@/components/AILoveMessageGenerator";
 import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
@@ -242,6 +243,11 @@ const Index = () => {
                 <p className="font-body text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* AI Love Message Generator */}
+          <div className="max-w-2xl mx-auto mt-12">
+            <AILoveMessageGenerator />
           </div>
 
           {/* Donation Section */}
