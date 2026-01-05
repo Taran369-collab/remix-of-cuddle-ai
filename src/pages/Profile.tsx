@@ -244,7 +244,6 @@ const Profile = () => {
       if (!updatedRows || updatedRows.length === 0) {
         const { error: insertError } = await supabase.from("profiles").insert({
           user_id: user.id,
-          email: user.email ?? null,
           avatar_url: avatarUrlWithTimestamp,
         });
 

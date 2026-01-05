@@ -40,31 +40,13 @@ const AdminUsers = () => {
 
   const fetchUsers = async () => {
     try {
-      // Fetch all profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Use edge function to fetch users with emails (admin only, secure)
+      const { data, error } = await supabase.functions.invoke("get-users-with-emails");
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      // Fetch admin user IDs
-      const { data: adminRoles, error: rolesError } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin");
-
-      if (rolesError) throw rolesError;
-
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
-
-      // Combine data
-      const usersWithRoles = (profiles || []).map(profile => ({
-        ...profile,
-        is_admin: adminUserIds.has(profile.user_id),
-      }));
-
-      setUsers(usersWithRoles);
+      setUsers(data.users || []);
     } catch (err) {
       console.error("Error fetching users:", err);
       toast.error("Failed to load users");
