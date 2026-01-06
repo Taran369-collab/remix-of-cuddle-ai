@@ -18,14 +18,26 @@ export const usePageTracking = () => {
   useEffect(() => {
     const trackPageView = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Get auth token if user is logged in
+        const { data: { session } } = await supabase.auth.getSession();
         
-        await supabase.from('page_views').insert({
-          page_path: location.pathname,
-          user_agent: navigator.userAgent,
-          referrer: document.referrer || null,
-          session_id: getSessionId(),
-          user_id: user?.id || null,
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (session?.access_token) {
+          headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        // Call Edge Function for server-side tracking
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/track-page-view`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            page_path: location.pathname,
+            session_id: getSessionId(),
+            referrer: document.referrer || null,
+          }),
         });
       } catch (error) {
         console.error('Error tracking page view:', error);
