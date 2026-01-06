@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.generate-love-message]
 verify_jwt = false
+
+[functions.check-password]
+verify_jwt = false
+
+[functions.manage-user-role]
+verify_jwt = false

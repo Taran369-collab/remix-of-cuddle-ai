@@ -24,39 +24,48 @@ const AdminAuth = () => {
   const { user, isAdmin, signIn, signUp, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Check if any admin exists in the system
+  // Check if any admin exists when user signs in (without auto-bootstrapping)
   useEffect(() => {
     const checkAdminExists = async () => {
       try {
-        // Try to call bootstrap - if it fails with "already exists", an admin exists
-        // This is a safe way to check without exposing user_roles data
-        const { error } = await supabase.rpc("bootstrap_first_admin");
-        if (error) {
-          if (error.message.includes("already exists") || error.message.includes("must be signed in")) {
-            setAdminExists(true);
-          } else {
-            setAdminExists(false);
-          }
-        } else {
-          // If bootstrap succeeded, we just made current user admin
+        // Check if current user already has admin role
+        const { data: userRole } = await supabase
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", user!.id)
+          .eq("role", "admin")
+          .single();
+
+        if (userRole) {
+          // User is already admin, will be redirected by the other useEffect
           setAdminExists(true);
-          toast.success("You are now an admin!");
-          window.location.href = "/#/admin";
+          return;
+        }
+
+        // Check if any admin exists by attempting to query user_roles count
+        // This query will fail due to RLS if user is not admin, which is expected
+        const { count, error } = await supabase
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "admin");
+
+        if (error) {
+          // RLS blocked - assume we need to check via bootstrap attempt (don't auto-execute)
+          setAdminExists(null);
+        } else {
+          setAdminExists(count !== null && count > 0);
         }
       } catch {
-        // If we're not signed in, we can't determine yet
         setAdminExists(null);
       }
     };
 
-    if (user) {
+    if (user && !isAdmin) {
       checkAdminExists();
-    } else {
-      // For non-authenticated users, we show the login form
-      // They'll see the bootstrap option after signing in if no admin exists
+    } else if (!user) {
       setAdminExists(null);
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   // Redirect authenticated admins to admin dashboard
   useEffect(() => {

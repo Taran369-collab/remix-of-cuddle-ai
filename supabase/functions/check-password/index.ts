@@ -1,21 +1,11 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3"
 
-// Dynamic CORS based on environment
-const getAllowedOrigin = (requestOrigin: string | null): string => {
-  const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [];
-  const defaultOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
-  
-  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
-    return requestOrigin;
-  }
-  return defaultOrigin;
-};
-
-const getCorsHeaders = (requestOrigin: string | null) => ({
-  'Access-Control-Allow-Origin': getAllowedOrigin(requestOrigin),
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-});
+}
 
 async function sha1(password: string): Promise<string> {
   const data = new TextEncoder().encode(password)
@@ -26,15 +16,39 @@ async function sha1(password: string): Promise<string> {
 }
 
 serve(async (req) => {
-  const origin = req.headers.get('Origin');
-  const corsHeaders = getCorsHeaders(origin);
-
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
+    // Require authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Authorization required" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Verify the user is authenticated
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      console.error("Auth error:", authError)
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired session" }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { password } = await req.json()
 
     if (!password || typeof password !== 'string') {
@@ -52,7 +66,7 @@ serve(async (req) => {
       )
     }
 
-    console.log("Checking password against HaveIBeenPwned API...")
+    console.log(`Checking password for user ${user.id} against HaveIBeenPwned API...`)
 
     const hash = await sha1(password)
     const prefix = hash.slice(0, 5).toUpperCase()
@@ -72,7 +86,7 @@ serve(async (req) => {
     }
 
     const leaked = (await res.text()).includes(suffix)
-    console.log("Password check complete, leaked:", leaked)
+    console.log(`Password check complete for user ${user.id}, leaked:`, leaked)
 
     return new Response(
       JSON.stringify({ leaked }),
