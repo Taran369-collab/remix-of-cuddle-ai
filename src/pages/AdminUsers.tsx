@@ -65,27 +65,24 @@ const AdminUsers = () => {
     setTogglingUserId(userProfile.user_id);
 
     try {
-      if (userProfile.is_admin) {
-        // Remove admin role
-        const { error } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", userProfile.user_id)
-          .eq("role", "admin");
+      const action = userProfile.is_admin ? "revoke" : "grant";
+      
+      // Use Edge Function for secure server-side role management
+      const { data, error } = await supabase.functions.invoke("manage-user-role", {
+        body: { 
+          targetUserId: userProfile.user_id, 
+          action 
+        },
+      });
 
-        if (error) throw error;
-        
-        toast.success(`Admin role revoked from ${userProfile.email}`);
-      } else {
-        // Grant admin role
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userProfile.user_id, role: "admin" });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-        if (error) throw error;
-        
-        toast.success(`Admin role granted to ${userProfile.email}`);
-      }
+      toast.success(
+        action === "grant" 
+          ? `Admin role granted to ${userProfile.email}`
+          : `Admin role revoked from ${userProfile.email}`
+      );
 
       // Update local state
       setUsers(prev => 
