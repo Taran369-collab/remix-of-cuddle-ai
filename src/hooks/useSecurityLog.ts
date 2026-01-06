@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Json } from '@/integrations/supabase/types';
 
 type SecurityAction = 
   | 'admin_access_attempt'
@@ -16,17 +15,28 @@ export const useSecurityLog = () => {
     details?: Record<string, string | number | boolean>
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get auth token if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
       
-      await supabase.from('security_logs').insert([{
-        user_id: user?.id || null,
-        user_email: user?.email || null,
-        action,
-        page_path: window.location.pathname + window.location.hash,
-        user_agent: navigator.userAgent,
-        success,
-        details: (details || null) as Json,
-      }]);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      // Call Edge Function for server-side logging
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/log-security-event`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action,
+          success,
+          details: details || null,
+          page_path: window.location.pathname + window.location.hash,
+        }),
+      });
     } catch (error) {
       console.error('Failed to log security event:', error);
     }
