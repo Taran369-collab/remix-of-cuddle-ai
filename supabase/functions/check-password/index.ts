@@ -1,9 +1,21 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+// Dynamic CORS based on environment
+const getAllowedOrigin = (requestOrigin: string | null): string => {
+  const allowedOrigins = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [];
+  const defaultOrigin = Deno.env.get('ALLOWED_ORIGIN') || '*';
+  
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return defaultOrigin;
+};
+
+const getCorsHeaders = (requestOrigin: string | null) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(requestOrigin),
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+});
 
 async function sha1(password: string): Promise<string> {
   const data = new TextEncoder().encode(password)
@@ -14,6 +26,9 @@ async function sha1(password: string): Promise<string> {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -22,9 +37,17 @@ serve(async (req) => {
   try {
     const { password } = await req.json()
 
-    if (!password) {
+    if (!password || typeof password !== 'string') {
       return new Response(
         JSON.stringify({ error: "Password required" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate password length to prevent abuse
+    if (password.length > 128) {
+      return new Response(
+        JSON.stringify({ error: "Password too long" }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
