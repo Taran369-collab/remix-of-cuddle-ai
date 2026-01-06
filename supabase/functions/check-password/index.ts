@@ -1,7 +1,11 @@
-supabase functions new check-password
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 
-async function sha1(password: string) {
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+async function sha1(password: string): Promise<string> {
   const data = new TextEncoder().encode(password)
   const hash = await crypto.subtle.digest("SHA-1", data)
   return Array.from(new Uint8Array(hash))
@@ -10,56 +14,52 @@ async function sha1(password: string) {
 }
 
 serve(async (req) => {
-  const { password } = await req.json()
-
-  if (!password) {
-    return new Response(
-      JSON.stringify({ error: "Password required" }),
-      { status: 400 }
-    )
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
-  const hash = await sha1(password)
-  const prefix = hash.slice(0, 5).toUpperCase()
-  const suffix = hash.slice(5).toUpperCase()
+  try {
+    const { password } = await req.json()
 
-  const res = await fetch(
-    `https://api.pwnedpasswords.com/range/${prefix}`,
-    { headers: { "Add-Padding": "true" } }
-  )
-
-  const leaked = (await res.text()).includes(suffix)
-
-  return new Response(
-    JSON.stringify({ leaked }),
-    { status: 200 }
-  )
-})
-supabase functions deploy check-password
-async function isPasswordLeaked(password) {
-  const res = await fetch(
-    "https://YOUR_PROJECT_ID.supabase.co/functions/v1/check-password",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer YOUR_SUPABASE_ANON_KEY`
-      },
-      body: JSON.stringify({ password })
+    if (!password) {
+      return new Response(
+        JSON.stringify({ error: "Password required" }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-  )
 
-  const { leaked } = await res.json()
-  return leaked
-}
-const leaked = await isPasswordLeaked(password)
+    console.log("Checking password against HaveIBeenPwned API...")
 
-if (leaked) {
-  alert("This password has been found in data breaches. Choose a stronger one.")
-  return
-}
+    const hash = await sha1(password)
+    const prefix = hash.slice(0, 5).toUpperCase()
+    const suffix = hash.slice(5).toUpperCase()
 
-await supabase.auth.signUp({
-  email,
-  password
+    const res = await fetch(
+      `https://api.pwnedpasswords.com/range/${prefix}`,
+      { headers: { "Add-Padding": "true" } }
+    )
+
+    if (!res.ok) {
+      console.error("HaveIBeenPwned API error:", res.status)
+      return new Response(
+        JSON.stringify({ error: "Password check service unavailable" }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const leaked = (await res.text()).includes(suffix)
+    console.log("Password check complete, leaked:", leaked)
+
+    return new Response(
+      JSON.stringify({ leaked }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error("Error checking password:", error)
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 })
