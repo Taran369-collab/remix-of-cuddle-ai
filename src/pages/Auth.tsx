@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { usePasswordCheck } from "@/hooks/usePasswordCheck";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Heart, Sparkles, Lock, Mail, ArrowLeft, User, Shield, Loader2 } from "lucide-react";
+import { Heart, Sparkles, Lock, Mail, ArrowLeft, User, Shield, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Factor } from "@supabase/supabase-js";
@@ -28,6 +29,7 @@ const Auth = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { user, signIn, signUp, isLoading: authLoading } = useAuth();
+  const { checkPassword, isChecking } = usePasswordCheck();
   const navigate = useNavigate();
 
   // 2FA state
@@ -211,6 +213,21 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/");
       } else {
+        // Check if password has been leaked before signup
+        const passwordResult = await checkPassword(password);
+        
+        if (passwordResult.leaked) {
+          toast.error(
+            "This password has been found in data breaches. Please choose a different, more secure password.",
+            {
+              icon: <AlertTriangle className="h-5 w-5 text-amber-500" />,
+              duration: 6000,
+            }
+          );
+          setIsLoading(false);
+          return;
+        }
+
         const { error } = await signUp(email, password);
         if (error) {
           if (error.message.includes("already registered")) {
@@ -445,10 +462,13 @@ const Auth = () => {
                   variant="romantic"
                   size="lg"
                   className="w-full mt-6"
-                  disabled={isLoading}
+                  disabled={isLoading || isChecking}
                 >
-                  {isLoading ? (
-                    "Please wait..."
+                  {isLoading || isChecking ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isChecking ? "Checking password..." : "Please wait..."}
+                    </>
                   ) : isLogin ? (
                     <>
                       <Heart className="mr-2 h-4 w-4" />
