@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Heart, Sparkles, Stars, User, History, Trash2 } from "lucide-react";
+import { Heart, Sparkles, Stars, User, History, Trash2, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
+import CompatibilityQuiz from "./CompatibilityQuiz";
 
 // Validation schema for names
 const nameSchema = z.string()
@@ -54,6 +55,7 @@ const LoveMeter = () => {
   const [displayScore, setDisplayScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
   const [history, setHistory] = useState<LoveResult[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
@@ -133,37 +135,51 @@ const LoveMeter = () => {
     }
   }, [user, showHistory]);
 
-  const spinMeter = () => {
-    if (!canSpin) return;
-    
+  const animateScore = (targetScore: number) => {
     setIsSpinning(true);
     setShowResult(false);
     setDisplayScore(0);
     
-    const newScore = Math.floor(Math.random() * 35) + 65;
-    
     setTimeout(() => {
-      setLoveScore(newScore);
+      setLoveScore(targetScore);
       setIsSpinning(false);
       
       let current = 0;
-      const increment = newScore / 30;
+      const increment = targetScore / 30;
       const timer = setInterval(() => {
         current += increment;
-        if (current >= newScore) {
-          setDisplayScore(newScore);
+        if (current >= targetScore) {
+          setDisplayScore(targetScore);
           setShowResult(true);
           clearInterval(timer);
           
           if (user) {
-            const msg = getLoveMessage(newScore);
-            saveResult(name1.trim(), name2.trim(), newScore, msg.message);
+            const msg = getLoveMessage(targetScore);
+            saveResult(name1.trim(), name2.trim(), targetScore, msg.message);
           }
         } else {
           setDisplayScore(Math.floor(current));
         }
       }, 50);
-    }, 2000);
+    }, 1500);
+  };
+
+  const spinMeter = () => {
+    if (!canSpin) return;
+    const newScore = Math.floor(Math.random() * 35) + 65;
+    animateScore(newScore);
+  };
+
+  const handleQuizComplete = (quizScore: number) => {
+    setShowQuiz(false);
+    animateScore(quizScore);
+  };
+
+  const startQuiz = () => {
+    if (!canSpin) return;
+    setShowQuiz(true);
+    setLoveScore(null);
+    setShowResult(false);
   };
 
   const circumference = 2 * Math.PI * 70;
@@ -200,7 +216,14 @@ const LoveMeter = () => {
           )}
         </div>
 
-        {showHistory && user ? (
+        {showQuiz ? (
+          <CompatibilityQuiz
+            name1={name1.trim() || "Partner 1"}
+            name2={name2.trim() || "Partner 2"}
+            onComplete={handleQuizComplete}
+            onBack={() => setShowQuiz(false)}
+          />
+        ) : showHistory && user ? (
           <div className="space-y-3">
             <h4 className="font-medium text-sm text-muted-foreground">Your History</h4>
             {loadingHistory ? (
@@ -353,29 +376,41 @@ const LoveMeter = () => {
               </div>
             )}
 
-            <Button
-              onClick={spinMeter}
-              disabled={isSpinning || !canSpin}
-              variant="romantic"
-              className="w-full"
-            >
-              {isSpinning ? (
-                <>
-                  <Heart className="mr-2 h-4 w-4 animate-heartbeat" />
-                  Calculating love...
-                </>
-              ) : loveScore !== null ? (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Try Again
-                </>
-              ) : (
-                <>
-                  <Heart className="mr-2 h-4 w-4" />
-                  Check Your Love
-                </>
-              )}
-            </Button>
+            <div className="space-y-3">
+              <Button
+                onClick={startQuiz}
+                disabled={isSpinning || !canSpin}
+                variant="romantic"
+                className="w-full"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Take Compatibility Quiz
+              </Button>
+              
+              <Button
+                onClick={spinMeter}
+                disabled={isSpinning || !canSpin}
+                variant="outline"
+                className="w-full"
+              >
+                {isSpinning ? (
+                  <>
+                    <Heart className="mr-2 h-4 w-4 animate-heartbeat" />
+                    Calculating love...
+                  </>
+                ) : loveScore !== null ? (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Quick Check Again
+                  </>
+                ) : (
+                  <>
+                    <Heart className="mr-2 h-4 w-4" />
+                    Quick Love Check
+                  </>
+                )}
+              </Button>
+            </div>
             
             {!user && (
               <p className="text-xs text-center text-muted-foreground mt-3">
