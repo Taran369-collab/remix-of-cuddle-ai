@@ -23,12 +23,26 @@ interface LoveResult {
 }
 
 const loveMessages = [
-  { min: 90, message: "Soulmates Forever!", emoji: "🔥" },
-  { min: 75, message: "True Love Connection!", emoji: "💖" },
-  { min: 60, message: "Growing Strong Together", emoji: "🌹" },
-  { min: 45, message: "Sweet Beginnings", emoji: "🌸" },
-  { min: 30, message: "Sparks Are Flying!", emoji: "✨" },
-  { min: 0, message: "Love Is Brewing...", emoji: "💫" },
+  { min: 98, message: "Written in the Stars!", emoji: "🌟" },
+  { min: 95, message: "Soulmates Forever!", emoji: "🔥" },
+  { min: 90, message: "Destined to Be!", emoji: "💍" },
+  { min: 85, message: "True Love Connection!", emoji: "💖" },
+  { min: 80, message: "A Perfect Match!", emoji: "🎯" },
+  { min: 75, message: "Love Is in the Air!", emoji: "🦋" },
+  { min: 70, message: "Growing Strong Together", emoji: "🌹" },
+  { min: 65, message: "Hearts Aligned!", emoji: "💕" },
+  { min: 60, message: "Blossoming Romance", emoji: "🌺" },
+  { min: 55, message: "Sweet Beginnings", emoji: "🌸" },
+  { min: 50, message: "Chemistry Building!", emoji: "⚗️" },
+  { min: 45, message: "Sparks Are Flying!", emoji: "✨" },
+  { min: 40, message: "Getting Warmer!", emoji: "🌡️" },
+  { min: 35, message: "Curious Connection", emoji: "🔮" },
+  { min: 30, message: "Something Special", emoji: "🎀" },
+  { min: 25, message: "Love Is Brewing...", emoji: "☕" },
+  { min: 20, message: "Seeds of Love", emoji: "🌱" },
+  { min: 15, message: "A Gentle Start", emoji: "🌤️" },
+  { min: 10, message: "The Journey Begins", emoji: "🚀" },
+  { min: 0, message: "Every Love Story Starts Here", emoji: "📖" },
 ];
 
 const LoveMeter = () => {
