@@ -1,19 +1,21 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, Sparkles, Star, Shield, LogOut, User, RotateCcw, Settings, Gift } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import FloatingHearts from "@/components/FloatingHearts";
 import TeddyCard from "@/components/TeddyCard";
 import LoveMessage from "@/components/LoveMessage";
-import LoveMeter from "@/components/LoveMeter";
 import AdPlacement from "@/components/AdPlacement";
-import CryptoDonation from "@/components/CryptoDonation";
-import AILoveMessageGenerator from "@/components/AILoveMessageGenerator";
 import { Button } from "@/components/ui/button";
 import teddyHeroImage from "@/assets/teddy-couple-hero.png";
 import { Helmet } from "react-helmet-async";
+
+// Lazy load heavy components
+const FloatingHearts = lazy(() => import("@/components/FloatingHearts"));
+const LoveMeter = lazy(() => import("@/components/LoveMeter"));
+const CryptoDonation = lazy(() => import("@/components/CryptoDonation"));
+const AILoveMessageGenerator = lazy(() => import("@/components/AILoveMessageGenerator"));
 
 const poses = [
   "Cuddling Together",
@@ -114,7 +116,9 @@ const Index = () => {
       </Helmet>
 
       <div className="min-h-screen bg-gradient-dreamy relative overflow-hidden">
-        <FloatingHearts />
+        <Suspense fallback={null}>
+          <FloatingHearts />
+        </Suspense>
 
         {/* Admin Header */}
         {!isLoading && (
@@ -216,7 +220,9 @@ const Index = () => {
             
             {/* Love Meter */}
             <div className="lg:order-2">
-              <LoveMeter />
+              <Suspense fallback={<div className="h-[400px] bg-card/60 rounded-2xl animate-pulse" />}>
+                <LoveMeter />
+              </Suspense>
             </div>
           </div>
 
@@ -247,12 +253,16 @@ const Index = () => {
 
           {/* AI Love Message Generator */}
           <div className="max-w-2xl mx-auto mt-12">
-            <AILoveMessageGenerator />
+            <Suspense fallback={<div className="h-[300px] bg-card/60 rounded-2xl animate-pulse" />}>
+              <AILoveMessageGenerator />
+            </Suspense>
           </div>
 
           {/* Donation Section */}
           <div className="max-w-md mx-auto mt-12">
-            <CryptoDonation />
+            <Suspense fallback={<div className="h-[200px] bg-card/60 rounded-2xl animate-pulse" />}>
+              <CryptoDonation />
+            </Suspense>
             <div className="text-center mt-4">
               <Link to="/donate">
                 <Button variant="romantic" size="sm">
