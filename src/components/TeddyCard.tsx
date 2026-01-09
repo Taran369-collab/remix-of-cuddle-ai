@@ -35,6 +35,8 @@ const TeddyCard = ({ imageSrc, pose, onGenerateNew, isGenerating }: TeddyCardPro
         <div className="relative rounded-2xl overflow-hidden shadow-romantic">
           <img
             src={imageSrc}
+            srcSet={`${imageSrc} 438w, ${imageSrc} 1024w`}
+            sizes="(max-width: 480px) 300px, 438px"
             alt={`Teddy bears ${pose}`}
             width={438}
             height={438}
