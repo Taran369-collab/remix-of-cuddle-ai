@@ -296,6 +296,48 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount_native: number
+          amount_usd: number | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_manual_entry: boolean | null
+          notes: string | null
+          sender_address: string | null
+          transaction_date: string
+          transaction_hash: string | null
+          wallet_type: string
+        }
+        Insert: {
+          amount_native: number
+          amount_usd?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_manual_entry?: boolean | null
+          notes?: string | null
+          sender_address?: string | null
+          transaction_date: string
+          transaction_hash?: string | null
+          wallet_type: string
+        }
+        Update: {
+          amount_native?: number
+          amount_usd?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_manual_entry?: boolean | null
+          notes?: string | null
+          sender_address?: string | null
+          transaction_date?: string
+          transaction_hash?: string | null
+          wallet_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
