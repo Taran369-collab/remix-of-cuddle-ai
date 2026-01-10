@@ -1,15 +1,20 @@
-import { supabase } from "@/integrations/supabase/client";
-
 type EventType = 'copy_address' | 'view_qr' | 'page_view';
 type PaymentMethod = 'UPI' | 'BTC' | 'ETH';
 
 export const useDonationTracking = () => {
   const trackEvent = async (eventType: EventType, paymentMethod: PaymentMethod) => {
     try {
-      await supabase.from('donation_events').insert({
-        event_type: eventType,
-        payment_method: paymentMethod,
-        user_agent: navigator.userAgent,
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      
+      await fetch(`${supabaseUrl}/functions/v1/track-donation-event`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event_type: eventType,
+          payment_method: paymentMethod,
+        }),
       });
     } catch (error) {
       console.error('Failed to track donation event:', error);
