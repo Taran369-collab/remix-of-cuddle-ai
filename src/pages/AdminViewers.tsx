@@ -81,6 +81,21 @@ const AdminViewers = () => {
     });
   }, [pageViews, dateFrom, dateTo]);
 
+  const [realRevenue, setRealRevenue] = useState<number>(0);
+
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      const { data } = await supabase
+        .from("wallet_transactions")
+        .select("amount_usd");
+      if (data) {
+        const total = data.reduce((sum, tx) => sum + (tx.amount_usd || 0), 0);
+        setRealRevenue(total);
+      }
+    };
+    if (isAdmin) fetchRevenue();
+  }, [isAdmin]);
+
   const stats = useMemo(() => {
     const today = new Date();
     const todayStart = startOfDay(today);
@@ -102,9 +117,6 @@ const AdminViewers = () => {
     const uniqueSessions = new Set(filteredViews.map((v) => v.session_id)).size;
     const uniqueUsers = new Set(filteredViews.filter((v) => v.user_id).map((v) => v.user_id)).size;
 
-    // Calculate estimated revenue (example: $0.001 per view for ads)
-    const estimatedRevenue = filteredViews.length * 0.001;
-
     return {
       total: filteredViews.length,
       today: todayViews,
@@ -112,7 +124,6 @@ const AdminViewers = () => {
       month: monthViews,
       uniqueSessions,
       uniqueUsers,
-      estimatedRevenue,
     };
   }, [filteredViews]);
 
@@ -264,9 +275,9 @@ const AdminViewers = () => {
           <Card className="p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-green-500/30">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="text-green-500" size={20} />
-              <span className="text-sm text-muted-foreground">Est. Revenue</span>
+              <span className="text-sm text-muted-foreground">Real Revenue</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">${stats.estimatedRevenue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-green-600">${realRevenue.toFixed(2)}</p>
           </Card>
         </div>
 
