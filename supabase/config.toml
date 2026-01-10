@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.manage-user-role]
 verify_jwt = false
+
+[functions.log-security-event]
+verify_jwt = false
+
+[functions.track-page-view]
+verify_jwt = false
+
+[functions.get-users-with-emails]
+verify_jwt = false
+
+[functions.track-donation-event]
+verify_jwt = false
