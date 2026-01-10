@@ -25,6 +25,7 @@ const AdminUsers = lazy(() => import("./pages/AdminUsers"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminViewers = lazy(() => import("./pages/AdminViewers"));
 const AdminDonations = lazy(() => import("./pages/AdminDonations"));
+const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
 const AdminDonationGoals = lazy(() => import("./pages/AdminDonationGoals"));
 const AdminSecuritySettings = lazy(() => import("./pages/AdminSecuritySettings"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -59,6 +60,7 @@ const App = () => (
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/viewers" element={<AdminViewers />} />
                 <Route path="/admin/donations" element={<AdminDonations />} />
+                <Route path="/admin/revenue" element={<AdminRevenue />} />
                 <Route path="/admin/donation-goals" element={<AdminDonationGoals />} />
                 <Route path="/admin/security" element={<AdminSecuritySettings />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />

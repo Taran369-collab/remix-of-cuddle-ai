@@ -2,7 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target, Loader2, ShieldCheck } from "lucide-react";
+import { Heart, Shield, LogOut, Image, MessageSquare, Users, BarChart3, Eye, Gift, Target, Loader2, ShieldCheck, DollarSign } from "lucide-react";
 import { useSecurityLog } from "@/hooks/useSecurityLog";
 import { useServerAdminCheck } from "@/hooks/useServerAdminCheck";
 
@@ -228,6 +228,22 @@ const AdminDashboard = () => {
               </p>
               <Button variant="romantic" size="sm" className="w-full">
                 Manage Goals
+              </Button>
+            </div>
+          </Link>
+
+          {/* Revenue Tracking */}
+          <Link to="/admin/revenue" className="block">
+            <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 backdrop-blur-sm rounded-2xl p-6 border border-emerald-500/30 shadow-romantic hover:shadow-glow transition-all duration-300 h-full">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-4">
+                <DollarSign className="text-emerald-600" size={24} />
+              </div>
+              <h3 className="font-display text-lg text-foreground mb-2">Revenue Tracking</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                View real wallet revenue from crypto & UPI.
+              </p>
+              <Button variant="outline" size="sm" className="w-full border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10">
+                View Revenue
               </Button>
             </div>
           </Link>
